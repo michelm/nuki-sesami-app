@@ -1,3 +1,12 @@
 <resources>
     <string name="app_name">nuki-sesami-app</string>
+    <string name="door_state_closed">Closed</string>
+    <string name="door_state_opened">Opened</string>
+    <string name="door_state_openhold">OpenHold</string>
+    <string name="door_mode_openclose">Open/Close</string>
+    <string name="door_mode_openhold">Open Hold</string>
+    <string name="door_request_state_none">No Request</string>
+    <string name="door_request_state_close">Close</string>
+    <string name="door_request_state_open">Open</string>
+    <string name="door_request_state_openhold">Open Hold</string>
 </resources>
