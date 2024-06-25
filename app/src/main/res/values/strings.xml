@@ -1,12 +1,26 @@
 <resources>
-    <string name="app_name">nuki-sesami-app</string>
+    <string name="app_name">Nuki Sesami App</string>
     <string name="door_state_closed">Closed</string>
     <string name="door_state_opened">Opened</string>
     <string name="door_state_openhold">OpenHold</string>
-    <string name="door_mode_openclose">Open/Close</string>
+    <string name="door_mode_open_close">Open/Close</string>
     <string name="door_mode_openhold">Open Hold</string>
     <string name="door_request_state_none">No Request</string>
     <string name="door_request_state_close">Close</string>
     <string name="door_request_state_open">Open</string>
     <string name="door_request_state_openhold">Open Hold</string>
+    <string name="door_action_open">Open</string>
+    <string name="door_action_close">Close</string>
+    <string name="door_mode_switch_text">Hold</string>
+    <string name="lock_state_uncalibrated">Uncalibrated</string>
+    <string name="lock_state_Locked">Locked</string>
+    <string name="lock_state_unlocking">Unlocking</string>
+    <string name="lock_state_unlocked">Unlocked</string>
+    <string name="lock_state_locking">Locking</string>
+    <string name="lock_state_unlatched">Unlatched</string>
+    <string name="lock_state_unlocked2">Unlocked2</string>
+    <string name="lock_state_unlatching">Unlatching</string>
+    <string name="lock_state_boot_run">Boot Run</string>
+    <string name="lock_state_motor_blocked">Motor Blocked</string>
+    <string name="lock_state_undefined">Undefined</string>
 </resources>
