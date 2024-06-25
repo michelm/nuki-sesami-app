@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
@@ -340,32 +341,56 @@ fun SettingsView(
         TextField(
             value = "raspi-door",
             onValueChange = { /* handle new text */ },
-            label = { Text("MQTT Hostname") },
+            label = { Text(stringResource(R.string.settings_label_mqtt_hostname)) },
             singleLine = true
         )
 
         TextField(
             value = "1883",
             onValueChange = { /* handle new text */ },
-            label = { Text("MQTT Port") },
+            label = { Text(stringResource(R.string.settings_label_mqtt_port)) },
             singleLine = true
         )
 
         TextField(
             value = "john.doe",
             onValueChange = { /* handle new text */ },
-            label = { Text("MQTT Username") },
+            label = { Text(stringResource(R.string.settings_label_mqtt_username)) },
             singleLine = true
         )
 
         TextField(
             value = "secret",
             onValueChange = { /* handle new text */ },
-            label = { Text("MQTT Password") },
+            label = { Text(stringResource(R.string.settings_label_mqtt_password)) },
             singleLine = true
         )
 
-        // TODO: add application settings
+        TextField(
+            value = "B8:27:EB:B9:2A:F0",
+            onValueChange = { /* handle new text */ },
+            label = { Text(stringResource(R.string.settings_label_bluetooth_address)) },
+            singleLine = true
+        )
+
+        TextField(
+            value = "4",
+            onValueChange = { /* handle new text */ },
+            label = { Text(stringResource(R.string.settings_label_bluetooth_channel)) },
+            singleLine = true
+        )
+
+        Spacer(modifier.padding(10.dp))
+
+        ElevatedButton(
+            onClick = {
+                // TODO: Save settings
+            }
+        ) {
+            Icon(imageVector = Icons.Filled.Check, contentDescription = "Localized Description")
+            Spacer(modifier.padding(end = 5.dp))
+            Text(stringResource(R.string.button_save), fontSize = 20.sp)
+        }
     }
 }
 
