@@ -33,6 +33,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -115,6 +116,7 @@ fun MainScreen(
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
     var viewSelected by remember { mutableStateOf(ViewSelected.LogicalView) }
+    var appBarTitleRID by remember { mutableStateOf(R.string.app_bar_title_home) }
 
     Scaffold (
         modifier = Modifier.fillMaxSize(),
@@ -123,7 +125,7 @@ fun MainScreen(
                 TopAppBar(
                     title = {
                         Text(
-                            text = "Nuki Sesami",
+                            text = stringResource(appBarTitleRID),
                             maxLines = 1,
                             fontWeight = FontWeight.Bold,
                             overflow = TextOverflow.Ellipsis
@@ -138,19 +140,28 @@ fun MainScreen(
                         }
                     },
                     actions = {
-                        IconButton(onClick = { viewSelected = ViewSelected.LogicalView }) {
+                        IconButton(onClick = {
+                            viewSelected = ViewSelected.LogicalView
+                            appBarTitleRID = R.string.app_bar_title_home
+                        }) {
                             Icon(
                                 imageVector = Icons.Filled.Home,
                                 contentDescription = "Localized description"
                             )
                         }
-                        IconButton(onClick = { viewSelected = ViewSelected.DetailedStatusView }) {
+                        IconButton(onClick = {
+                            viewSelected = ViewSelected.DetailedStatusView
+                            appBarTitleRID = R.string.app_bar_title_detailed_status
+                        }) {
                             Icon(
                                 imageVector = Icons.Filled.DateRange,
                                 contentDescription = "Localized description"
                             )
                         }
-                        IconButton(onClick = { viewSelected = ViewSelected.SettingsView }) {
+                        IconButton(onClick = {
+                            viewSelected = ViewSelected.SettingsView
+                            appBarTitleRID = R.string.app_bar_title_settings
+                        }) {
                             Icon(
                                 imageVector = Icons.Filled.Settings,
                                 contentDescription = "Localized description"
@@ -161,23 +172,31 @@ fun MainScreen(
                 DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.menu_item_logical_view)) },
-                        onClick = { viewSelected = ViewSelected.LogicalView },
+                        onClick = { viewSelected = ViewSelected.LogicalView
+                                    appBarTitleRID = R.string.app_bar_title_home
+                                  },
                         leadingIcon = { Icon(Icons.Outlined.Home, contentDescription = null) }
                     )
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.menu_item_detailed_status)) },
-                        onClick = { viewSelected = ViewSelected.DetailedStatusView },
+                        onClick = { viewSelected = ViewSelected.DetailedStatusView
+                                    appBarTitleRID = R.string.app_bar_title_detailed_status
+                                  },
                         leadingIcon = { Icon(Icons.Outlined.DateRange, contentDescription = null) }
                     )
                     HorizontalDivider()
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.menu_item_settings)) },
-                        onClick = { viewSelected = ViewSelected.SettingsView },
+                        onClick = { viewSelected = ViewSelected.SettingsView
+                                    appBarTitleRID = R.string.app_bar_title_settings
+                                  },
                         leadingIcon = { Icon(Icons.Outlined.Settings, contentDescription = null) }
                     )
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.menu_item_about)) },
-                        onClick = { viewSelected = ViewSelected.AboutView },
+                        onClick = { viewSelected = ViewSelected.AboutView
+                                    appBarTitleRID = R.string.app_bar_title_about
+                                  },
                         leadingIcon = { Icon(Icons.Outlined.Info, contentDescription = null) }
                     )
                 }
@@ -318,7 +337,34 @@ fun SettingsView(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Settings view")
+        TextField(
+            value = "raspi-door",
+            onValueChange = { /* handle new text */ },
+            label = { Text("MQTT Hostname") },
+            singleLine = true
+        )
+
+        TextField(
+            value = "1883",
+            onValueChange = { /* handle new text */ },
+            label = { Text("MQTT Port") },
+            singleLine = true
+        )
+
+        TextField(
+            value = "john.doe",
+            onValueChange = { /* handle new text */ },
+            label = { Text("MQTT Username") },
+            singleLine = true
+        )
+
+        TextField(
+            value = "secret",
+            onValueChange = { /* handle new text */ },
+            label = { Text("MQTT Password") },
+            singleLine = true
+        )
+
         // TODO: add application settings
     }
 }
