@@ -3,8 +3,10 @@
     <string name="door_state_closed">Closed</string>
     <string name="door_state_opened">Opened</string>
     <string name="door_state_openhold">OpenHold</string>
+    <string name="door_state_undefined">Undefined</string>
     <string name="door_mode_open_close">Open/Close</string>
     <string name="door_mode_openhold">Open Hold</string>
+    <string name="door_mode_undefined">Undefined</string>
     <string name="door_request_state_none">No Request</string>
     <string name="door_request_state_close">Close</string>
     <string name="door_request_state_open">Open</string>

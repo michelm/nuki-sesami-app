@@ -67,7 +67,7 @@ fun doorStateText(state: DoorState): String {
         DoorState.OpenHold -> stringResource(R.string.door_state_openhold)
         DoorState.Opened -> stringResource(R.string.door_state_opened)
         DoorState.Closed -> stringResource(R.string.door_state_closed)
-        else -> stringResource(R.string.door_state_closed)
+        DoorState.Undefined -> stringResource(R.string.door_state_undefined)
     }
 }
 
@@ -76,7 +76,8 @@ fun doorStateText(state: DoorState): String {
 fun doorModeText(mode: DoorMode): String {
     return when(mode) {
         DoorMode.OpenHold -> stringResource(R.string.door_mode_openhold)
-        else -> stringResource(R.string.door_mode_open_close)
+        DoorMode.OpenClose -> stringResource(R.string.door_mode_open_close)
+        DoorMode.Undefined -> stringResource(R.string.door_mode_undefined)
     }
 }
 
