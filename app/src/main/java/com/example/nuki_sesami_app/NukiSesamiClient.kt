@@ -1,19 +1,22 @@
 package com.example.nuki_sesami_app
 
-class NukiSesamiClient {
+class NukiSesamiClient constructor (
+    var nukiDeviceID: String,
+    var mqttHostname: String,
+    var mqttPort: String,
+    var mqttUsername: String,
+    var mqttPassword: String,
+    var bluetoothAddress: String,
+    var bluetoothChannel: String,
+) {
     var doorMode: DoorMode = DoorMode.Unknown
     var doorState: DoorState = DoorState.Unknown
     var doorSensor: DoorSensorState = DoorSensorState.DoorStateUnknown
     var doorAction: DoorAction = DoorAction.Open
     var lockState: LockState = LockState.Undefined
-    var mqttHostname = "localhost"
-    var mqttPort = "1883"
-    var mqttUsername = "john.doe"
-    var mqttPassword = "secret"
-    var bluetoothAddress = "B8:27:EB:B9:2A:F0"
-    var bluetoothChannel = "4"
 
-    fun useSettings(
+    fun connect(
+        nukiDeviceID: String,
         mqttHostname: String,
         mqttPort: String,
         mqttUsername: String,
@@ -21,12 +24,15 @@ class NukiSesamiClient {
         bluetoothAddress: String,
         bluetoothChannel: String,
     ) {
+        this.nukiDeviceID = nukiDeviceID
         this.mqttHostname = mqttHostname
         this.mqttPort = mqttPort
         this.mqttUsername = mqttUsername
         this.mqttPassword = mqttPassword
         this.bluetoothAddress = bluetoothAddress
         this.bluetoothChannel = bluetoothChannel
+
+        // TODO: reconnect using mqtt or bluetooth
     }
 
     fun closeDoor() {

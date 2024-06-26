@@ -1,5 +1,6 @@
 package com.example.nuki_sesami_app
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -47,6 +48,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -55,7 +57,35 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat.getString
 import com.example.nuki_sesami_app.ui.theme.NukiSesamiAppTheme
+
+fun getSesamiClient(preferences: UserPreferences, context: Context): NukiSesamiClient {
+    val nukiDeviceID = preferences.load(
+        getString(context, R.string.preferences_key_nuki_device_id), "3807B7EC")
+    val mqttHostname = preferences.load(
+        getString(context, R.string.preferences_key_mqtt_hostname), "raspi-door")
+    val mqttPort = preferences.load(
+        getString(context, R.string.preferences_key_mqtt_port), "1883")
+    val mqttUsername = preferences.load(
+        getString(context, R.string.preferences_key_mqtt_username), "sesami")
+    val mqttPassword = preferences.load(
+        getString(context, R.string.preferences_key_mqtt_password), "")
+    val bluetoothAddress = preferences.load(
+        getString(context, R.string.preferences_key_bluetooth_address), "B8:27:EB:B9:2A:F0")
+    val bluetoothChannel = preferences.load(
+        getString(context, R.string.preferences_key_bluetooth_channel), "4")
+
+    return NukiSesamiClient(
+        nukiDeviceID,
+        mqttHostname,
+        mqttPort,
+        mqttUsername,
+        mqttPassword,
+        bluetoothAddress,
+        bluetoothChannel,
+    )
+}
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -63,8 +93,13 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             NukiSesamiAppTheme {
+                val context = LocalContext.current
+                val preferences = UserPreferences(context)
+                val sesami = getSesamiClient(preferences, context)
+
                 MainScreen(
-                    sesami = NukiSesamiClient(),
+                    preferences = preferences,
+                    sesami = sesami,
                     modifier = Modifier
                 )
             }
@@ -119,6 +154,7 @@ fun lockStateText(lockState: LockState): String {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
+    preferences: UserPreferences,
     sesami: NukiSesamiClient,
     modifier: Modifier = Modifier
 ) {
@@ -216,6 +252,7 @@ fun MainScreen(
         },
         content = { innerPadding ->
             MainContent(
+                preferences = preferences,
                 sesami = sesami,
                 viewSelected = viewSelected,
                 goHome = {
@@ -230,6 +267,7 @@ fun MainScreen(
 
 @Composable
 fun MainContent(
+    preferences: UserPreferences,
     sesami: NukiSesamiClient,
     viewSelected: ViewSelected,
     goHome: () -> Unit,
@@ -238,7 +276,7 @@ fun MainContent(
     when(viewSelected) {
         ViewSelected.LogicalView -> LogicalView(sesami, modifier)
         ViewSelected.DetailedStatusView -> DetailedStatusView(sesami, modifier)
-        ViewSelected.SettingsView -> SettingsView(sesami, goHome, modifier)
+        ViewSelected.SettingsView -> SettingsView(preferences, sesami, goHome, modifier)
         ViewSelected.AboutView -> AboutView(sesami, modifier)
     }
 }
@@ -360,12 +398,48 @@ fun DetailedStatusView(
     }
 }
 
+fun savePreferences(
+    preferences: UserPreferences,
+    context: Context,
+    nukiDeviceID: String,
+    mqttHostname: String,
+    mqttPort: String,
+    mqttUsername: String,
+    mqttPassword: String,
+    bluetoothAddress: String,
+    bluetoothChannel: String,
+) {
+    preferences.save(
+        getString(context, R.string.preferences_key_nuki_device_id), nukiDeviceID)
+
+    preferences.save(
+        getString(context, R.string.preferences_key_mqtt_hostname), mqttHostname)
+
+    preferences.save(
+        getString(context, R.string.preferences_key_mqtt_port), mqttPort)
+
+    preferences.save(
+        getString(context, R.string.preferences_key_mqtt_username), mqttUsername)
+
+    preferences.save(
+        getString(context, R.string.preferences_key_mqtt_password), mqttPassword)
+
+    preferences.save(
+        getString(context, R.string.preferences_key_bluetooth_address), bluetoothAddress)
+
+    preferences.save(
+        getString(context, R.string.preferences_key_bluetooth_channel), bluetoothChannel)
+}
+
 @Composable
 fun SettingsView(
+    preferences: UserPreferences,
     sesami: NukiSesamiClient,
     goHome: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
+    var nukiDeviceID by remember { mutableStateOf(sesami.nukiDeviceID) }
     var mqttHostname by remember { mutableStateOf(sesami.mqttHostname) }
     var mqttPort by remember { mutableStateOf(sesami.mqttPort) }
     var mqttUsername by remember { mutableStateOf(sesami.mqttUsername) }
@@ -380,6 +454,16 @@ fun SettingsView(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        TextField(
+            value = nukiDeviceID,
+            onValueChange = {   // TODO: validate entered value
+                nukiDeviceID = it
+                changed = true
+            },
+            label = { Text(stringResource(R.string.settings_label_nuki_device_id)) },
+            singleLine = true
+        )
+
         TextField(
             value = mqttHostname,
             onValueChange = {   // TODO: validate entered value
@@ -447,10 +531,21 @@ fun SettingsView(
         ElevatedButton(
             enabled = changed,
             onClick = {
-                // TODO: Save settings
+                savePreferences(
+                    preferences,
+                    context,
+                    nukiDeviceID,
+                    mqttHostname,
+                    mqttPort,
+                    mqttUsername,
+                    mqttPassword,
+                    bluetoothAddress,
+                    bluetoothChannel,
+                )
 
-                // Use settings in sesami
-                sesami.useSettings(
+                // Use updated settings in sesami
+                sesami.connect(
+                    nukiDeviceID,
                     mqttHostname,
                     mqttPort,
                     mqttUsername,
@@ -491,8 +586,13 @@ fun AboutView(
 @Composable
 fun MainScreenPreview() {
     NukiSesamiAppTheme {
+        val context = LocalContext.current
+        val preferences = UserPreferences(context)
+        val sesami = getSesamiClient(preferences, context)
+
         MainScreen(
-            sesami = NukiSesamiClient(),
+            preferences = preferences,
+            sesami = sesami,
             modifier = Modifier
         )
     }
