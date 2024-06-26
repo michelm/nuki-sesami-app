@@ -40,4 +40,6 @@
     <string name="settings_label_mqtt_password">MQTT Password</string>
     <string name="settings_label_bluetooth_address">Bluetooth Address</string>
     <string name="settings_label_bluetooth_channel">Bluetooth Channel</string>
+    <string name="tooltip_electric_door_state">Electric door state</string>
+    <string name="tooltip_smart_lock_state">Smart lock state</string>
 </resources>
