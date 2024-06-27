@@ -362,8 +362,7 @@ fun LogicalView(
     })
 
     Column (
-        modifier = modifier
-            .fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -388,7 +387,7 @@ fun LogicalView(
         Row (verticalAlignment = Alignment.CenterVertically
         ) {
             Switch(
-                enabled = action != DoorAction.None,
+                enabled = action == DoorAction.Open,
                 checked = hold,
                 onCheckedChange = {
                     hold = it
@@ -403,8 +402,7 @@ fun LogicalView(
             )
         }
 
-        Spacer(modifier.padding(10.dp))
-        HorizontalDivider()
+        HorizontalDivider(modifier.padding(10.dp))
 
         Column(
             modifier = modifier,
@@ -478,8 +476,7 @@ fun DetailedStatusView(
     })
 
     Column(
-        modifier = modifier
-            .fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -635,8 +632,6 @@ fun SettingsView(
                     bluetoothAddress,
                     bluetoothChannel,
                 )
-
-                // TODO: Notify user of success
 
                 goHome()
             }
