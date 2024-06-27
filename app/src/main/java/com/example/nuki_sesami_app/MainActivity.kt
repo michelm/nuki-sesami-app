@@ -1,6 +1,5 @@
 package com.example.nuki_sesami_app
 
-import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -15,11 +14,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.DateRange
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Info
@@ -48,6 +50,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -57,26 +60,25 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat.getString
 import com.example.nuki_sesami_app.ui.theme.NukiSesamiAppTheme
 
-fun getSesamiClient(preferences: UserPreferences, context: Context): NukiSesamiClient {
+fun getSesamiClient(preferences: UserPreferences): NukiSesamiClient {
     val nukiDeviceID = preferences.load(
-        getString(context, R.string.preferences_key_nuki_device_id), "3807B7EC")
+        R.string.preferences_key_nuki_device_id, "3807B7EC")
     val mqttHostname = preferences.load(
-        getString(context, R.string.preferences_key_mqtt_hostname), "raspi-door")
+        R.string.preferences_key_mqtt_hostname, "raspi-door")
     val mqttPort = preferences.load(
-        getString(context, R.string.preferences_key_mqtt_port), "1883")
+        R.string.preferences_key_mqtt_port, "1883")
     val mqttUsername = preferences.load(
-        getString(context, R.string.preferences_key_mqtt_username), "sesami")
+        R.string.preferences_key_mqtt_username, "sesami")
     val mqttPassword = preferences.load(
-        getString(context, R.string.preferences_key_mqtt_password), "")
+        R.string.preferences_key_mqtt_password, "")
     val bluetoothAddress = preferences.load(
-        getString(context, R.string.preferences_key_bluetooth_address), "B8:27:EB:B9:2A:F0")
+        R.string.preferences_key_bluetooth_address, "B8:27:EB:B9:2A:F0")
     val bluetoothChannel = preferences.load(
-        getString(context, R.string.preferences_key_bluetooth_channel), "4")
+        R.string.preferences_key_bluetooth_channel, "4")
 
-    return NukiSesamiClient(
+    return DummyNukiSesamiClient(
         nukiDeviceID,
         mqttHostname,
         mqttPort,
@@ -95,7 +97,7 @@ class MainActivity : ComponentActivity() {
             NukiSesamiAppTheme {
                 val context = LocalContext.current
                 val preferences = UserPreferences(context)
-                val sesami = getSesamiClient(preferences, context)
+                val sesami = getSesamiClient(preferences)
 
                 MainScreen(
                     preferences = preferences,
@@ -110,8 +112,9 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun doorActionText(action: DoorAction): String {
     return when (action) {
+        DoorAction.None -> stringResource(R.string.door_action_none)
         DoorAction.Open -> stringResource(R.string.door_action_open)
-        else -> stringResource(R.string.door_action_close)
+        DoorAction.Close -> stringResource(R.string.door_action_close)
     }
 }
 
@@ -135,6 +138,20 @@ fun doorModeText(mode: DoorMode): String {
 }
 
 @Composable
+fun doorSensorText(sensor: DoorSensorState): String {
+    return when(sensor) {
+        DoorSensorState.Deactivated -> stringResource(R.string.door_sensor_state_deactivated)
+        DoorSensorState.DoorClosed -> stringResource(R.string.door_sensor_state_door_closed)
+        DoorSensorState.DoorOpened -> stringResource(R.string.door_sensor_state_door_opened)
+        DoorSensorState.DoorStateUnknown -> stringResource(R.string.door_sensor_state_door_state_unknown)
+        DoorSensorState.Calibrating -> stringResource(R.string.door_sensor_state_calibrating)
+        DoorSensorState.Uncalibrated -> stringResource(R.string.door_sensor_state_uncalibrated)
+        DoorSensorState.Tampered -> stringResource(R.string.door_sensor_state_tampered)
+        DoorSensorState.Unknown -> stringResource(R.string.door_sensor_state_unknown)
+    }
+}
+
+@Composable
 fun lockStateText(lockState: LockState): String {
     return when(lockState) {
         LockState.Uncalibrated -> stringResource(R.string.lock_state_uncalibrated)
@@ -147,7 +164,15 @@ fun lockStateText(lockState: LockState): String {
         LockState.Unlatching -> stringResource(R.string.lock_state_unlatching)
         LockState.BootRun -> stringResource(R.string.lock_state_boot_run)
         LockState.MotorBlocked -> stringResource(R.string.lock_state_motor_blocked)
-        else -> stringResource(R.string.lock_state_undefined)
+        LockState.Undefined -> stringResource(R.string.lock_state_undefined)
+    }
+}
+
+@Composable
+fun connectionStateText(connected: Boolean): String {
+    return when (connected) {
+        true -> stringResource(R.string.connection_state_connected)
+        false -> stringResource(R.string.connection_state_not_connected)
     }
 }
 
@@ -274,10 +299,40 @@ fun MainContent(
     modifier: Modifier = Modifier
 ) {
     when(viewSelected) {
-        ViewSelected.LogicalView -> LogicalView(sesami, modifier)
+        ViewSelected.LogicalView -> LogicalView(sesami, modifier, preferences)
         ViewSelected.DetailedStatusView -> DetailedStatusView(sesami, modifier)
-        ViewSelected.SettingsView -> SettingsView(preferences, sesami, goHome, modifier)
+        ViewSelected.SettingsView -> SettingsView(sesami, modifier, preferences, goHome)
         ViewSelected.AboutView -> AboutView(sesami, modifier)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun LogicalViewDetailsEntry(
+    icon: ImageVector,
+    text: String,
+    tooltip: Int
+) {
+    TooltipBox(
+        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+        tooltip = { PlainTooltip { Text(stringResource(tooltip)) } },
+        state = rememberTooltipState(),
+        focusable = true
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(
+                onClick = { /* No action */ },
+                enabled = false
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = "Localized Description"
+                )
+            }
+            Text(text)
+        }
     }
 }
 
@@ -285,12 +340,26 @@ fun MainContent(
 @Composable
 fun LogicalView(
     sesami: NukiSesamiClient,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    preferences: UserPreferences,
 ) {
-    val action = doorActionText(sesami.doorAction)
-    val lock = lockStateText(sesami.lockState)
-    val door = doorStateText(sesami.doorState)
-    var hold by remember { mutableStateOf(true) }
+    var action by remember { mutableStateOf(sesami.doorAction) }
+    var door by remember { mutableStateOf(sesami.doorState) }
+    var lock by remember { mutableStateOf(sesami.lockState) }
+    var mqtt by remember { mutableStateOf(sesami.mqttConnected) }
+    var bluetooth by remember { mutableStateOf(sesami.bluetoothConnected) }
+    var connected by remember { mutableStateOf(mqtt || bluetooth) }
+    var hold by remember { mutableStateOf(preferences.load(
+        R.string.preferences_key_switch_openhold, true)) }
+
+    sesami.observe(observer={
+        action = sesami.doorAction
+        door = sesami.doorState
+        lock = sesami.lockState
+        mqtt = sesami.mqttConnected
+        bluetooth = sesami.bluetoothConnected
+        connected = mqtt || bluetooth
+    })
 
     Column (
         modifier = modifier
@@ -301,8 +370,10 @@ fun LogicalView(
         Row (verticalAlignment = Alignment.CenterVertically
         ){
             ElevatedButton(
+                enabled = action != DoorAction.None,
                 onClick = {
                     when(sesami.doorAction) {
+                        DoorAction.None -> { /* no action */  }
                         DoorAction.Close -> sesami.closeDoor()
                         DoorAction.Open -> sesami.openDoor(hold = hold)
                     }
@@ -310,14 +381,18 @@ fun LogicalView(
             ) {
                 Icon(imageVector = Icons.Filled.Lock, contentDescription = "Localized Description")
                 Spacer(modifier.padding(end = 5.dp))
-                Text(action, fontSize = 36.sp)
+                Text(doorActionText(action), fontSize = 36.sp)
             }
         }
 
         Row (verticalAlignment = Alignment.CenterVertically
         ) {
-            Switch(checked = hold, onCheckedChange = {
+            Switch(
+                enabled = action != DoorAction.None,
+                checked = hold,
+                onCheckedChange = {
                     hold = it
+                    preferences.save(R.string.preferences_key_switch_openhold, it)
                 }
             )
             Spacer(modifier.padding(end = 10.dp))
@@ -335,50 +410,47 @@ fun LogicalView(
             modifier = modifier,
             horizontalAlignment = Alignment.Start
         ) {
-            TooltipBox(
-                positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-                tooltip = { PlainTooltip { Text(stringResource(R.string.tooltip_electric_door_state)) } },
-                state = rememberTooltipState(),
-                focusable = true
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(
-                        onClick = { /* No action */ },
-                        enabled = false
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Home,
-                            contentDescription = "Localized Description"
-                        )
-                    }
-                    Text(door)
-                }
-            }
+            LogicalViewDetailsEntry(
+                Icons.Filled.Home,
+                doorStateText(door),
+                R.string.tooltip_electric_door_state
+            )
 
-            TooltipBox(
-                positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-                tooltip = { PlainTooltip { Text(stringResource(R.string.tooltip_smart_lock_state)) } },
-                state = rememberTooltipState(),
-                focusable = true
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(
-                        onClick = { /* No action */ },
-                        enabled = false
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Lock,
-                            contentDescription = "Localized Description"
-                        )
-                    }
-                    Text(lock)
-                }
-            }
+            LogicalViewDetailsEntry(
+                Icons.Filled.Lock,
+                lockStateText(lock),
+                R.string.tooltip_smart_lock_state
+            )
+
+            LogicalViewDetailsEntry(
+                if (connected) Icons.Filled.CheckCircle else Icons.Filled.Warning,
+                if (mqtt) "mqtt" else { if (bluetooth) "bluetooth" else "---" },
+                R.string.tooltip_sesami_connection_state
+            )
         }
+    }
+}
+
+@Composable
+fun DetailedStatusViewEntry(
+    icon: ImageVector,
+    caption: String,
+    state: String
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(
+            onClick = { /* No action */ },
+            enabled = false
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = "Localized Description"
+            )
+        }
+        Text(caption)
+        Text(state, fontWeight = FontWeight.Bold)
     }
 }
 
@@ -387,58 +459,71 @@ fun DetailedStatusView(
     sesami: NukiSesamiClient,
     modifier: Modifier = Modifier
 ) {
+    var action by remember { mutableStateOf(sesami.doorAction) }
+    var door by remember { mutableStateOf(sesami.doorState) }
+    var mode by remember { mutableStateOf(sesami.doorMode) }
+    var sensor by remember { mutableStateOf(sesami.doorSensor) }
+    var lock by remember { mutableStateOf(sesami.lockState) }
+    var mqtt by remember { mutableStateOf(sesami.mqttConnected) }
+    var bluetooth by remember { mutableStateOf(sesami.bluetoothConnected) }
+
+    sesami.observe(observer={
+        action = sesami.doorAction
+        door = sesami.doorState
+        mode = sesami.doorMode
+        sensor = sesami.doorSensor
+        lock = sesami.lockState
+        mqtt = sesami.mqttConnected
+        bluetooth = sesami.bluetoothConnected
+    })
+
     Column(
         modifier = modifier
             .fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
+        verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Detailed status view")
-        // TODO: add detailed status information
+        Column(
+            modifier = modifier,
+            horizontalAlignment = Alignment.Start
+        ) {
+            DetailedStatusViewEntry(Icons.Filled.CheckCircle,"door action:",
+                doorActionText(action))
+
+            DetailedStatusViewEntry(Icons.Filled.Home,"door state:",
+                doorStateText(door))
+
+            DetailedStatusViewEntry(Icons.Filled.Info,"door mode:",
+                doorModeText(mode))
+
+            DetailedStatusViewEntry(Icons.Filled.Info,"door sensor:",
+                doorSensorText(sensor))
+
+            DetailedStatusViewEntry(Icons.Filled.Info,"lock state:",
+                lockStateText(lock))
+
+            DetailedStatusViewEntry(
+                if (mqtt) Icons.Filled.CheckCircle else Icons.Filled.Warning,
+                "mqtt:",
+                connectionStateText(mqtt)
+            )
+
+            DetailedStatusViewEntry(
+                if (bluetooth) Icons.Filled.CheckCircle else Icons.Filled.Warning,
+                "bluetooth:",
+                connectionStateText(bluetooth)
+            )
+        }
     }
-}
-
-fun savePreferences(
-    preferences: UserPreferences,
-    context: Context,
-    nukiDeviceID: String,
-    mqttHostname: String,
-    mqttPort: String,
-    mqttUsername: String,
-    mqttPassword: String,
-    bluetoothAddress: String,
-    bluetoothChannel: String,
-) {
-    preferences.save(
-        getString(context, R.string.preferences_key_nuki_device_id), nukiDeviceID)
-
-    preferences.save(
-        getString(context, R.string.preferences_key_mqtt_hostname), mqttHostname)
-
-    preferences.save(
-        getString(context, R.string.preferences_key_mqtt_port), mqttPort)
-
-    preferences.save(
-        getString(context, R.string.preferences_key_mqtt_username), mqttUsername)
-
-    preferences.save(
-        getString(context, R.string.preferences_key_mqtt_password), mqttPassword)
-
-    preferences.save(
-        getString(context, R.string.preferences_key_bluetooth_address), bluetoothAddress)
-
-    preferences.save(
-        getString(context, R.string.preferences_key_bluetooth_channel), bluetoothChannel)
 }
 
 @Composable
 fun SettingsView(
-    preferences: UserPreferences,
     sesami: NukiSesamiClient,
-    goHome: () -> Unit,
     modifier: Modifier = Modifier,
+    preferences: UserPreferences,
+    goHome: () -> Unit,
 ) {
-    val context = LocalContext.current
     var nukiDeviceID by remember { mutableStateOf(sesami.nukiDeviceID) }
     var mqttHostname by remember { mutableStateOf(sesami.mqttHostname) }
     var mqttPort by remember { mutableStateOf(sesami.mqttPort) }
@@ -531,17 +616,14 @@ fun SettingsView(
         ElevatedButton(
             enabled = changed,
             onClick = {
-                savePreferences(
-                    preferences,
-                    context,
-                    nukiDeviceID,
-                    mqttHostname,
-                    mqttPort,
-                    mqttUsername,
-                    mqttPassword,
-                    bluetoothAddress,
-                    bluetoothChannel,
-                )
+                // Save user preferences
+                preferences.save(R.string.preferences_key_nuki_device_id, nukiDeviceID)
+                preferences.save(R.string.preferences_key_mqtt_hostname, mqttHostname)
+                preferences.save(R.string.preferences_key_mqtt_port, mqttPort)
+                preferences.save(R.string.preferences_key_mqtt_username, mqttUsername)
+                preferences.save(R.string.preferences_key_mqtt_password, mqttPassword)
+                preferences.save(R.string.preferences_key_bluetooth_address, bluetoothAddress)
+                preferences.save(R.string.preferences_key_bluetooth_channel, bluetoothChannel)
 
                 // Use updated settings in sesami
                 sesami.connect(
@@ -588,7 +670,7 @@ fun MainScreenPreview() {
     NukiSesamiAppTheme {
         val context = LocalContext.current
         val preferences = UserPreferences(context)
-        val sesami = getSesamiClient(preferences, context)
+        val sesami = getSesamiClient(preferences)
 
         MainScreen(
             preferences = preferences,

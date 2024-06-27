@@ -2,18 +2,27 @@
     <string name="app_name">Nuki Sesami App</string>
     <string name="door_state_closed">closed</string>
     <string name="door_state_opened">opened</string>
-    <string name="door_state_openhold">open + hold</string>
+    <string name="door_state_openhold">open and hold</string>
     <string name="door_state_unknown">unknown</string>
     <string name="door_mode_open_close">open -> close</string>
-    <string name="door_mode_openhold">open + hold</string>
+    <string name="door_mode_openhold">open and hold</string>
     <string name="door_mode_unknown">unknown</string>
     <string name="door_request_state_none">none</string>
     <string name="door_request_state_close">close</string>
     <string name="door_request_state_open">open</string>
-    <string name="door_request_state_openhold">open + hold</string>
+    <string name="door_request_state_openhold">open and hold</string>
+    <string name="door_action_none">---</string>
     <string name="door_action_open">open</string>
     <string name="door_action_close">close</string>
     <string name="door_mode_switch_text">hold</string>
+    <string name="door_sensor_state_deactivated">deactivated</string>
+    <string name="door_sensor_state_door_closed">closed</string>
+    <string name="door_sensor_state_door_opened">opened</string>
+    <string name="door_sensor_state_door_state_unknown">state unknown</string>
+    <string name="door_sensor_state_calibrating">calibrating</string>
+    <string name="door_sensor_state_uncalibrated">uncalibrated</string>
+    <string name="door_sensor_state_tampered">tampered</string>
+    <string name="door_sensor_state_unknown">unknown</string>
     <string name="lock_state_uncalibrated">uncalibrated</string>
     <string name="lock_state_locked">locked</string>
     <string name="lock_state_unlocking">unlocking</string>
@@ -43,6 +52,9 @@
     <string name="settings_label_bluetooth_channel">Bluetooth Channel</string>
     <string name="tooltip_electric_door_state">Electric door state</string>
     <string name="tooltip_smart_lock_state">Smart lock state</string>
+    <string name="tooltip_sesami_connection_state">Sesami connection type</string>
+    <string name="connection_state_connected">connected</string>
+    <string name="connection_state_not_connected">not connected</string>
     <string name="preferences_file_key">org.example.nuki-sesami.shared-preferences</string>
     <string name="preferences_key_nuki_device_id">nuki_device_id</string>
     <string name="preferences_key_mqtt_hostname">mqtt_hostname</string>
@@ -51,4 +63,5 @@
     <string name="preferences_key_mqtt_password">mqtt_password</string>
     <string name="preferences_key_bluetooth_address">bluetooth_address</string>
     <string name="preferences_key_bluetooth_channel">bluetooth_channel</string>
+    <string name="preferences_key_switch_openhold">switch_openhold</string>
 </resources>
