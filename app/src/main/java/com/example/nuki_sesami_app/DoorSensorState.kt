@@ -8,5 +8,16 @@ enum class DoorSensorState(val value: Int) {
     Calibrating(5),
     Uncalibrated(16),
     Tampered(240),
-    Unknown(255)
+    Unknown(255);
+
+    companion object {
+        fun from(value: Int): DoorSensorState {
+            return entries.firstOrNull { it.value == value } ?: Unknown
+        }
+
+        fun from(value: String): DoorSensorState {
+            val t = value.toIntOrNull()
+            return DoorSensorState.from(t ?: 0)
+        }
+    }
 }

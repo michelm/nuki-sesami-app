@@ -8,5 +8,17 @@ enum class LockAction(val value: Int) {
     LockAndGo2(5),  // Lock&Go with unlatch deactivate continuous mode
     FullLock(6),
     Fob(80),        // Fob (without action)
-    Button(90)      // Button (without action)
+    Button(90),     // Button (without action)
+    None(255);
+
+    companion object {
+        fun from(value: Int): LockAction {
+            return entries.firstOrNull { it.value == value } ?: None
+        }
+
+        fun from(value: String): LockAction {
+            val t = value.toIntOrNull()
+            return LockAction.from(t ?: 0)
+        }
+    }
 }

@@ -2,15 +2,15 @@
     <string name="app_name">Nuki Sesami App</string>
     <string name="door_state_closed">closed</string>
     <string name="door_state_opened">opened</string>
-    <string name="door_state_openhold">open and hold</string>
+    <string name="door_state_openhold">open (hold)</string>
     <string name="door_state_unknown">unknown</string>
     <string name="door_mode_open_close">open -> close</string>
-    <string name="door_mode_openhold">open and hold</string>
+    <string name="door_mode_openhold">open -> hold</string>
     <string name="door_mode_unknown">unknown</string>
     <string name="door_request_state_none">none</string>
     <string name="door_request_state_close">close</string>
     <string name="door_request_state_open">open</string>
-    <string name="door_request_state_openhold">open and hold</string>
+    <string name="door_request_state_openhold">open (hold)</string>
     <string name="door_action_none">---</string>
     <string name="door_action_open">open</string>
     <string name="door_action_close">close</string>
@@ -64,4 +64,14 @@
     <string name="preferences_key_bluetooth_address">bluetooth_address</string>
     <string name="preferences_key_bluetooth_channel">bluetooth_channel</string>
     <string name="preferences_key_switch_openhold">switch_openhold</string>
+    <string name="about_view_entry_caption_application">application</string>
+    <string name="about_view_entry_caption_version">version</string>
+    <string name="about_view_entry_caption_build_type">build type</string>
+    <string name="about_view_entry_caption_server">server</string>
+    <string name="about_view_description_caption">About</string>
+    <string name="about_view_description">Using this app you can open (and hold open) an electric door equipped with a Nuki 3.0 Pro smart lock.
+        The Nuki Sesami service will perform the logic for you when using an ERREKA Smart Evolution Pro electric door controller in combination with a Nuki 3.0 Pro smart lock.
+        When connected to the same WiFi network commands to, and status from, the Nuki Sesami service can be exchanged using the mqtt protocol.
+        Otherwise when paired the same can be achieved using Bluetooth.
+    </string>
 </resources>
