@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Home
@@ -22,10 +21,12 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.DateRange
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedButton
@@ -39,6 +40,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PlainTooltip
+import androidx.compose.material3.Snackbar
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
@@ -61,6 +63,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat.getString
 import com.example.nuki_sesami_app.ui.theme.NukiSesamiAppTheme
 
 class MainActivity : ComponentActivity() {
@@ -157,6 +160,45 @@ fun MainScreen(
     var menuExpanded by remember { mutableStateOf(false) }
     var viewSelected by remember { mutableStateOf(ViewSelected.LogicalView) }
     var appBarTitleRID by remember { mutableStateOf(R.string.app_bar_title_home) }
+    var settingsChanged by remember { mutableStateOf(false) }
+    var snackBarMessage by remember { mutableStateOf("") }
+    //val simulated by remember { mutableStateOf(simulation) }
+
+    preferences.subscribe { _, _ -> // (key, value) arguments not used
+        // Remember settings have changed; use updated settings when leaving view
+        settingsChanged = true
+    }
+
+    val changeView = fun (next: ViewSelected) {
+        val current = viewSelected
+
+        if (next == current) {
+            return
+        }
+
+        if (current == ViewSelected.SettingsView && settingsChanged) {
+            // Use updated settings in sesami
+            sesami.configure(
+                preferences.load(R.string.preferences_key_nuki_device_id, NUKI_SESAMI_DEFAULT_DEVICE_ID),
+                preferences.load(R.string.preferences_key_mqtt_hostname, NUKI_SESAMI_DEFAULT_MQTT_HOSTNAME),
+                preferences.load(R.string.preferences_key_mqtt_port, NUKI_SESAMI_DEFAULT_MQTT_PORT),
+                preferences.load(R.string.preferences_key_mqtt_username, NUKI_SESAMI_DEFAULT_MQTT_USERNAME),
+                preferences.load(R.string.preferences_key_mqtt_password, NUKI_SESAMI_DEFAULT_MQTT_PASSWORD),
+                preferences.load(R.string.preferences_key_bluetooth_address, NUKI_SESAMI_DEFAULT_BLUETOOTH_ADDRESS),
+                preferences.load(R.string.preferences_key_bluetooth_channel, NUKI_SESAMI_DEFAULT_BLUETOOTH_CHANNEL),
+            )
+
+            // Enforce sesami to use new settings
+            sesami.deactivate()
+            sesami.activate()
+
+            // Inform user
+            snackBarMessage = getString(context, R.string.snackbar_message_settings_updated)
+        }
+
+        viewSelected = next
+        settingsChanged = false
+    }
 
     Scaffold (
         modifier = Modifier.fillMaxSize(),
@@ -181,7 +223,7 @@ fun MainScreen(
                     },
                     actions = {
                         IconButton(onClick = {
-                            viewSelected = ViewSelected.LogicalView
+                            changeView(ViewSelected.LogicalView)
                             appBarTitleRID = R.string.app_bar_title_home
                         }) {
                             Icon(
@@ -190,7 +232,7 @@ fun MainScreen(
                             )
                         }
                         IconButton(onClick = {
-                            viewSelected = ViewSelected.DetailedStatusView
+                            changeView(ViewSelected.DetailedStatusView)
                             appBarTitleRID = R.string.app_bar_title_detailed_status
                         }) {
                             Icon(
@@ -199,7 +241,7 @@ fun MainScreen(
                             )
                         }
                         IconButton(onClick = {
-                            viewSelected = ViewSelected.SettingsView
+                            changeView(ViewSelected.SettingsView)
                             appBarTitleRID = R.string.app_bar_title_settings
                         }) {
                             Icon(
@@ -212,7 +254,7 @@ fun MainScreen(
                 DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.menu_item_logical_view)) },
-                        onClick = { viewSelected = ViewSelected.LogicalView
+                        onClick = { changeView(ViewSelected.LogicalView)
                                     appBarTitleRID = R.string.app_bar_title_home
                                     menuExpanded = false
                                   },
@@ -220,7 +262,7 @@ fun MainScreen(
                     )
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.menu_item_detailed_status)) },
-                        onClick = { viewSelected = ViewSelected.DetailedStatusView
+                        onClick = { changeView(ViewSelected.DetailedStatusView)
                                     appBarTitleRID = R.string.app_bar_title_detailed_status
                                     menuExpanded = false
                                   },
@@ -229,7 +271,7 @@ fun MainScreen(
                     HorizontalDivider()
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.menu_item_settings)) },
-                        onClick = { viewSelected = ViewSelected.SettingsView
+                        onClick = { changeView(ViewSelected.SettingsView)
                                     appBarTitleRID = R.string.app_bar_title_settings
                                     menuExpanded = false
                                   },
@@ -237,7 +279,7 @@ fun MainScreen(
                     )
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.menu_item_about)) },
-                        onClick = { viewSelected = ViewSelected.AboutView
+                        onClick = { changeView(ViewSelected.AboutView)
                                     appBarTitleRID = R.string.app_bar_title_about
                                     menuExpanded = false
                                   },
@@ -247,16 +289,37 @@ fun MainScreen(
             }
         },
         content = { innerPadding ->
-            MainContent(
-                preferences = preferences,
-                sesami = sesami,
-                viewSelected = viewSelected,
-                goHome = {
-                    viewSelected = ViewSelected.LogicalView
-                    appBarTitleRID = R.string.app_bar_title_home
-                },
-                modifier = modifier.padding(innerPadding)
-            )
+            Box {
+                MainContent(
+                    preferences = preferences,
+                    sesami = sesami,
+                    viewSelected = viewSelected,
+                    modifier = modifier.padding(innerPadding)
+                )
+            }
+        },
+        bottomBar = {
+            Box {
+                Snackbar(
+                    action = {
+                        IconButton(
+                            onClick = { snackBarMessage = "" },
+                            enabled = (snackBarMessage.isNotEmpty())
+                        ) {
+                            Icon(Icons.Outlined.Clear, contentDescription = "Localized description")
+                        }
+                    },
+                    modifier = Modifier.padding(8.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (simulation) {
+                            Icon(Icons.Outlined.Star, contentDescription = "Localized description")
+                            Text(text = "demo   ")
+                        }
+                        Text(text = snackBarMessage)
+                    }
+                }
+            }
         }
     )
 }
@@ -266,14 +329,13 @@ fun MainContent(
     preferences: UserPreferences,
     sesami: NukiSesamiClient,
     viewSelected: ViewSelected,
-    goHome: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     when(viewSelected) {
         ViewSelected.LogicalView -> LogicalView(sesami, modifier, preferences)
         ViewSelected.DetailedStatusView -> DetailedStatusView(sesami, modifier)
-        ViewSelected.SettingsView -> SettingsView(sesami, modifier, preferences, goHome)
-        ViewSelected.AboutView -> AboutView(sesami, modifier)
+        ViewSelected.SettingsView -> SettingsView(modifier, preferences)
+        ViewSelected.AboutView -> AboutView(modifier)
     }
 }
 
@@ -353,8 +415,10 @@ fun LogicalView(
                     }
                 }
             ) {
-                Icon(imageVector = Icons.Filled.Lock, contentDescription = "Localized Description")
-                Spacer(modifier.padding(end = 5.dp))
+                Icon(
+                    modifier = Modifier.padding(end = 5.dp),
+                    imageVector = Icons.Filled.Lock,
+                    contentDescription = "Localized Description")
                 Text(doorActionText(action), fontSize = 36.sp)
             }
         }
@@ -362,6 +426,7 @@ fun LogicalView(
         Row (verticalAlignment = Alignment.CenterVertically
         ) {
             Switch(
+                modifier = Modifier.padding(end = 5.dp),
                 enabled = action == DoorAction.Open,
                 checked = hold,
                 onCheckedChange = {
@@ -369,7 +434,6 @@ fun LogicalView(
                     preferences.save(R.string.preferences_key_switch_openhold, it)
                 }
             )
-            Spacer(modifier.padding(end = 10.dp))
             Text(
                 stringResource(R.string.door_mode_switch_text),
                 color = MaterialTheme.colorScheme.primary,
@@ -377,29 +441,31 @@ fun LogicalView(
             )
         }
 
-        HorizontalDivider(modifier.padding(10.dp))
+        HorizontalDivider(modifier = Modifier.padding(20.dp))
 
-        Column(
-            modifier = modifier,
-            horizontalAlignment = Alignment.Start
+        Row (verticalAlignment = Alignment.CenterVertically
         ) {
-            LogicalViewDetailsEntry(
-                Icons.Filled.Home,
-                doorStateText(door),
-                R.string.tooltip_electric_door_state
-            )
+            Column(
+                horizontalAlignment = Alignment.Start
+            ) {
+                LogicalViewDetailsEntry(
+                    Icons.Filled.Home,
+                    doorStateText(door),
+                    R.string.tooltip_electric_door_state
+                )
 
-            LogicalViewDetailsEntry(
-                Icons.Filled.Lock,
-                lockStateText(lock),
-                R.string.tooltip_smart_lock_state
-            )
+                LogicalViewDetailsEntry(
+                    Icons.Filled.Lock,
+                    lockStateText(lock),
+                    R.string.tooltip_smart_lock_state
+                )
 
-            LogicalViewDetailsEntry(
-                if (connected) Icons.Filled.CheckCircle else Icons.Filled.Warning,
-                if (mqtt) "mqtt" else { if (bluetooth) "bluetooth" else "---" },
-                R.string.tooltip_sesami_connection_state
-            )
+                LogicalViewDetailsEntry(
+                    if (connected) Icons.Filled.CheckCircle else Icons.Filled.Warning,
+                    if (mqtt) "mqtt" else { if (bluetooth) "bluetooth" else "---" },
+                    R.string.tooltip_sesami_connection_state
+                )
+            }
         }
     }
 }
@@ -437,6 +503,7 @@ fun DetailedStatusView(
     var mode by remember { mutableStateOf(sesami.doorMode.value) }
     var sensor by remember { mutableStateOf(sesami.doorSensor.value) }
     var lock by remember { mutableStateOf(sesami.lockState.value) }
+    var serverVersion by remember { mutableStateOf(sesami.version.value) }
     var mqtt by remember { mutableStateOf(sesami.mqttConnected.value) }
     var mqttError by remember { mutableStateOf("") }
     var bluetooth by remember { mutableStateOf(false) }
@@ -447,6 +514,7 @@ fun DetailedStatusView(
         sesami.doorMode.subscribe { value: DoorMode -> mode = value }
         sesami.doorSensor.subscribe { value: DoorSensorState -> sensor = value }
         sesami.lockState.subscribe { value: LockState -> lock = value }
+        sesami.version.subscribe { value: String -> serverVersion = value }
         sesami.mqttConnected.subscribe { value: Boolean -> mqtt = value }
         sesami.mqttError.subscribe { value: String -> mqttError = value }
         sesami.bluetoothConnected.subscribe { value: Boolean -> bluetooth = value }
@@ -461,20 +529,23 @@ fun DetailedStatusView(
             modifier = modifier,
             horizontalAlignment = Alignment.Start
         ) {
-            DetailedStatusViewEntry(Icons.Filled.CheckCircle,"door action",
-                doorActionText(action))
+            DetailedStatusViewEntry(Icons.Filled.CheckCircle,
+                stringResource(R.string.detailed_status_view_entry_door_action), doorActionText(action))
 
-            DetailedStatusViewEntry(Icons.Filled.Home,"door state",
-                doorStateText(door))
+            DetailedStatusViewEntry(Icons.Filled.Home,
+                stringResource(R.string.detailed_status_view_entry_door_state), doorStateText(door))
 
-            DetailedStatusViewEntry(Icons.Filled.Info,"door mode",
-                doorModeText(mode))
+            DetailedStatusViewEntry(Icons.Filled.Info,
+                stringResource(R.string.detailed_status_view_entry_door_mode), doorModeText(mode))
 
-            DetailedStatusViewEntry(Icons.Filled.Info,"door sensor",
-                doorSensorText(sensor))
+            DetailedStatusViewEntry(Icons.Filled.Info,
+                stringResource(R.string.detailed_status_view_entry_door_sensor), doorSensorText(sensor))
 
-            DetailedStatusViewEntry(Icons.Filled.Info,"lock state",
-                lockStateText(lock))
+            DetailedStatusViewEntry(Icons.Filled.Info,
+                stringResource(R.string.detailed_status_view_entry_lock_state), lockStateText(lock))
+
+            DetailedStatusViewEntry(Icons.Filled.Info,
+                stringResource(R.string.detailed_status_view_entry_server_version), serverVersion)
 
             DetailedStatusViewEntry(
                 if (mqtt) Icons.Filled.CheckCircle else Icons.Filled.Warning,
@@ -500,74 +571,133 @@ fun DetailedStatusView(
     }
 }
 
+fun isValidNukiDeviceIDArg(arg: String): Boolean {
+    try {
+        arg.toLong(radix = 16) // throws exception when not a valid hexadecimal
+        return true
+    }
+    catch (e: NumberFormatException) {
+        return false
+    }
+    catch (e: NumberFormatException) {
+        return false
+    }
+}
+
+fun parseMqttPortArg(arg: Int?): Int? {
+    if (arg == null || arg < NUKI_SESAMI_MIN_MQTT_PORT || arg > NUKI_SESAMI_MAX_MQTT_PORT) {
+        return null
+    }
+
+    return arg
+}
+
+fun parseBluetoothChannelArg(arg: Int?): Int? {
+    if (arg == null || arg < NUKI_SESAMI_MIN_BLUETOOTH_CHANNEL || arg > NUKI_SESAMI_MAX_BLUETOOTH_CHANNEL) {
+        return null
+    }
+
+    return arg
+}
+
 @Composable
 fun SettingsView(
-    sesami: NukiSesamiClient,
     modifier: Modifier = Modifier,
     preferences: UserPreferences,
-    goHome: () -> Unit,
 ) {
-    var nukiDeviceID by remember { mutableStateOf(sesami.nukiDeviceID) }
-    var mqttHostname by remember { mutableStateOf(sesami.mqttHostname) }
-    var mqttPort by remember { mutableStateOf(sesami.mqttPort) }
-    var mqttUsername by remember { mutableStateOf(sesami.mqttUsername) }
-    var mqttPassword by remember { mutableStateOf(sesami.mqttPassword) }
-    var bluetoothAddress by remember { mutableStateOf(sesami.bluetoothAddress) }
-    var bluetoothChannel by remember { mutableStateOf(sesami.bluetoothChannel) }
-    var changed by remember { mutableStateOf(false) }
+    var nukiDeviceID by remember { mutableStateOf(preferences.load(
+        R.string.preferences_key_nuki_device_id, NUKI_SESAMI_DEFAULT_DEVICE_ID)
+    ) }
+
+    var mqttHostname by remember { mutableStateOf(preferences.load(
+        R.string.preferences_key_mqtt_hostname, NUKI_SESAMI_DEFAULT_MQTT_HOSTNAME)
+    ) }
+
+    var mqttPort by remember { mutableStateOf(preferences.load(
+        R.string.preferences_key_mqtt_port, NUKI_SESAMI_DEFAULT_MQTT_PORT).toString()
+    ) }
+
+    var mqttUsername by remember { mutableStateOf(preferences.load(
+        R.string.preferences_key_mqtt_username, NUKI_SESAMI_DEFAULT_MQTT_USERNAME)
+    ) }
+
+    var mqttPassword by remember { mutableStateOf(preferences.load(
+        R.string.preferences_key_mqtt_password, NUKI_SESAMI_DEFAULT_MQTT_PASSWORD)
+    ) }
+
+    var bluetoothAddress by remember { mutableStateOf(preferences.load(
+        R.string.preferences_key_bluetooth_address, NUKI_SESAMI_DEFAULT_BLUETOOTH_ADDRESS)
+    ) }
+
+    var bluetoothChannel by remember { mutableStateOf(preferences.load(
+        R.string.preferences_key_bluetooth_channel, NUKI_SESAMI_DEFAULT_BLUETOOTH_CHANNEL).toString()
+    ) }
+
+    var validMqttPort by remember { mutableStateOf (true) }
+    var validBluetoothChannel by remember { mutableStateOf (true) }
+    var validNukiDeviceID by remember { mutableStateOf (true) }
 
     Column(
-        modifier = modifier
-            .fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         TextField(
             value = nukiDeviceID,
-            onValueChange = {   // TODO: validate entered value
+            onValueChange = {
                 nukiDeviceID = it
-                changed = true
+                validNukiDeviceID = isValidNukiDeviceIDArg(it)
+                if (validNukiDeviceID) {
+                    preferences.save(R.string.preferences_key_nuki_device_id, nukiDeviceID)
+                }
             },
             label = { Text(stringResource(R.string.settings_label_nuki_device_id)) },
-            singleLine = true
+            singleLine = true,
+            isError = !validNukiDeviceID
         )
 
         TextField(
             value = mqttHostname,
-            onValueChange = {   // TODO: validate entered value
-                                mqttHostname = it
-                                changed = true
-                            },
+            onValueChange = {
+                // TODO: check if valid hostname or IP(6) address?
+                mqttHostname = it
+                preferences.save(R.string.preferences_key_mqtt_hostname, mqttHostname)
+            },
             label = { Text(stringResource(R.string.settings_label_mqtt_hostname)) },
             singleLine = true
         )
 
         TextField(
             value = mqttPort,
-            onValueChange = {   // TODO: validate entered value
-                                mqttPort = it
-                                changed = true
-                            },
+            onValueChange = {
+                val port = parseMqttPortArg(it.toIntOrNull())
+                if (port != null) {
+                    preferences.save(R.string.preferences_key_mqtt_port, port)
+                }
+                mqttPort = it
+                validMqttPort = (port != null)
+            },
             label = { Text(stringResource(R.string.settings_label_mqtt_port)) },
-            singleLine = true
+            singleLine = true,
+            isError = !validMqttPort
         )
 
         TextField(
             value = mqttUsername,
-            onValueChange = {   // TODO: validate entered value
-                                mqttUsername = it
-                                changed = true
-                            },
+            onValueChange = {
+                mqttUsername = it
+                preferences.save(R.string.preferences_key_mqtt_username, mqttUsername)
+            },
             label = { Text(stringResource(R.string.settings_label_mqtt_username)) },
             singleLine = true
         )
 
         TextField(
             value = mqttPassword,
-            onValueChange = {   // TODO: validate entered value
-                                mqttPassword = it
-                                changed = true
-                            },
+            onValueChange = {
+                mqttPassword = it
+                preferences.save(R.string.preferences_key_mqtt_password, mqttPassword)
+            },
             label = { Text(stringResource(R.string.settings_label_mqtt_password)) },
             singleLine = true,
             visualTransformation = PasswordVisualTransformation(),
@@ -576,69 +706,36 @@ fun SettingsView(
 
         TextField(
             value = bluetoothAddress,
-            onValueChange = {   // TODO: validate entered value
-                                bluetoothAddress = it
-                                changed = true
-                            },
+            onValueChange = {
+                // TODO: check if valid bluetooth address
+                bluetoothAddress = it
+                preferences.save(R.string.preferences_key_bluetooth_address, bluetoothAddress)
+            },
             label = { Text(stringResource(R.string.settings_label_bluetooth_address)) },
             singleLine = true
         )
 
         TextField(
             value = bluetoothChannel,
-            onValueChange = {   // TODO: validate entered value
-                                bluetoothChannel = it
-                                changed = true
-                            },
+            onValueChange = {
+                val channel = parseBluetoothChannelArg(it.toIntOrNull())
+                if (channel != null) {
+                    preferences.save(R.string.preferences_key_bluetooth_channel, channel)
+                }
+                bluetoothChannel = it
+                validBluetoothChannel = (channel != null)
+            },
             label = { Text(stringResource(R.string.settings_label_bluetooth_channel)) },
-            singleLine = true
+            singleLine = true,
+            isError = !validBluetoothChannel
         )
-
-        Spacer(modifier.padding(10.dp))
-
-        ElevatedButton(
-            enabled = changed,
-            onClick = {
-                // Save user preferences
-                preferences.save(R.string.preferences_key_nuki_device_id, nukiDeviceID)
-                preferences.save(R.string.preferences_key_mqtt_hostname, mqttHostname)
-                preferences.save(R.string.preferences_key_mqtt_port, mqttPort)
-                preferences.save(R.string.preferences_key_mqtt_username, mqttUsername)
-                preferences.save(R.string.preferences_key_mqtt_password, mqttPassword)
-                preferences.save(R.string.preferences_key_bluetooth_address, bluetoothAddress)
-                preferences.save(R.string.preferences_key_bluetooth_channel, bluetoothChannel)
-
-                // Use updated settings in sesami
-                sesami.configure(
-                    nukiDeviceID,
-                    mqttHostname,
-                    mqttPort,
-                    mqttUsername,
-                    mqttPassword,
-                    bluetoothAddress,
-                    bluetoothChannel,
-                )
-
-                sesami.deactivate()
-
-                sesami.activate()
-
-                goHome()
-            }
-        ) {
-            Icon(imageVector = Icons.Filled.Check, contentDescription = "Localized Description")
-            Spacer(modifier.padding(end = 5.dp))
-            Text(stringResource(R.string.button_save), fontSize = 20.sp)
-        }
     }
 }
 
 @Composable
-fun AboutViewEntry(caption: String, value: String, modifier: Modifier = Modifier)
+fun AboutViewEntry(caption: String, value: String)
 {
-    Row(
-        modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically
+    Row(verticalAlignment = Alignment.CenterVertically
     ) {
         Text("${caption}: ")
         Text(value, fontWeight = FontWeight.Bold)
@@ -647,44 +744,28 @@ fun AboutViewEntry(caption: String, value: String, modifier: Modifier = Modifier
 
 @Composable
 fun AboutView(
-    sesami: NukiSesamiClient,
     modifier: Modifier = Modifier
 ) {
     val appName = "nuki-sesami"
     val appVersion = BuildConfig.VERSION_NAME
     val buildType = BuildConfig.BUILD_TYPE
-    var serverVersion by remember { mutableStateOf(sesami.version.value) }
     val description = stringResource(R.string.about_view_description)
 
-    LaunchedEffect(sesami) {
-        sesami.version.subscribe { value: String -> serverVersion = value }
-    }
-
-    Column(
-        modifier = modifier
+    Box(modifier = modifier
             .padding(start=20.dp, end=20.dp)
             .fillMaxSize(),
-        verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Column(
-            modifier = modifier,
             horizontalAlignment = Alignment.Start
         ) {
             Text(stringResource(R.string.about_view_description_caption), fontWeight = FontWeight.Bold)
             HorizontalDivider()
             Text(description)
             HorizontalDivider()
-        }
-
-        Column(
-            modifier = modifier,
-            horizontalAlignment = Alignment.Start
-        ) {
+            Spacer(modifier=Modifier.padding(vertical=40.dp))
             AboutViewEntry(stringResource(R.string.about_view_entry_caption_application), appName)
             AboutViewEntry(stringResource(R.string.about_view_entry_caption_version), appVersion)
             AboutViewEntry(stringResource(R.string.about_view_entry_caption_build_type), buildType)
-            AboutViewEntry(stringResource(R.string.about_view_entry_caption_server), serverVersion)
         }
     }
 }

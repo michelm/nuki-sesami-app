@@ -13,9 +13,23 @@ import java.util.Timer
 import kotlin.concurrent.timer
 import kotlin.random.Random
 
+const val NUKI_SESAMI_DEFAULT_DEVICE_ID = "3807B7EC"
+const val NUKI_SESAMI_DEFAULT_MQTT_HOSTNAME = "raspi-door"
+const val NUKI_SESAMI_DEFAULT_MQTT_PORT = 1883
+const val NUKI_SESAMI_DEFAULT_MQTT_USERNAME = "sesami"
+const val NUKI_SESAMI_DEFAULT_MQTT_PASSWORD = ""
+const val NUKI_SESAMI_DEFAULT_BLUETOOTH_ADDRESS = "B8:27:EB:B9:2A:F0"
+const val NUKI_SESAMI_DEFAULT_BLUETOOTH_CHANNEL = 4
+
+const val NUKI_SESAMI_MIN_MQTT_PORT = 1
+const val NUKI_SESAMI_MAX_MQTT_PORT = 65535
+
+const val NUKI_SESAMI_MIN_BLUETOOTH_CHANNEL = 1
+const val NUKI_SESAMI_MAX_BLUETOOTH_CHANNEL = 9
+
 class NukiSesamiMqtt(
     hostname: String,
-    port: String,
+    port: Int,
     private var username: String,
     private var password: String,
     clientId: String,
@@ -191,11 +205,11 @@ class NukiSesamiMqtt(
 open class NukiSesamiClient (
     var nukiDeviceID: String,
     var mqttHostname: String,
-    var mqttPort: String,
+    var mqttPort: Int,
     var mqttUsername: String,
     var mqttPassword: String,
     var bluetoothAddress: String,
-    var bluetoothChannel: String
+    var bluetoothChannel: Int
 ) {
     var doorState = ObservableState(DoorState.Unknown)
         protected set
@@ -212,7 +226,7 @@ open class NukiSesamiClient (
     var lockState = ObservableState(LockState.Undefined)
         protected set
 
-    var version = ObservableState("?")
+    var version = ObservableState("0.0.0")
         protected set
 
     var bluetoothConnected = ObservableState(false)
@@ -281,11 +295,11 @@ open class NukiSesamiClient (
     open fun configure(
         nukiDeviceID: String,
         mqttHostname: String,
-        mqttPort: String,
+        mqttPort: Int,
         mqttUsername: String,
         mqttPassword: String,
         bluetoothAddress: String,
-        bluetoothChannel: String,
+        bluetoothChannel: Int,
     ) {
         this.nukiDeviceID = nukiDeviceID
         this.mqttHostname = mqttHostname
@@ -316,11 +330,11 @@ open class NukiSesamiClient (
 class NukiSesamiClientSimulation(
     nukiDeviceID: String,
     mqttHostname: String,
-    mqttPort: String,
+    mqttPort: Int,
     mqttUsername: String,
     mqttPassword: String,
     bluetoothAddress: String,
-    bluetoothChannel: String,
+    bluetoothChannel: Int,
 ) : NukiSesamiClient(
     nukiDeviceID,
     mqttHostname,
@@ -378,6 +392,8 @@ class NukiSesamiClientSimulation(
                 doorSensor.value = DoorSensorState.from(Random.nextInt(1, 6))
                 val n = Random.nextInt(0, 10)
                 version.value = "$n.$n.$n"
+                mqttConnected.value = Random.nextBoolean()
+                bluetoothConnected.value = Random.nextBoolean()
             }
         )
     }
@@ -394,19 +410,19 @@ class NukiSesamiClientSimulation(
 fun getSesamiClient(preferences: UserPreferences, activate: Boolean,
                     simulation: Boolean = false): NukiSesamiClient {
     val nukiDeviceID = preferences.load(
-        R.string.preferences_key_nuki_device_id, "3807B7EC")
+        R.string.preferences_key_nuki_device_id, NUKI_SESAMI_DEFAULT_DEVICE_ID)
     val mqttHostname = preferences.load(
-        R.string.preferences_key_mqtt_hostname, "raspi-door")
+        R.string.preferences_key_mqtt_hostname, NUKI_SESAMI_DEFAULT_MQTT_HOSTNAME)
     val mqttPort = preferences.load(
-        R.string.preferences_key_mqtt_port, "1883")
+        R.string.preferences_key_mqtt_port, NUKI_SESAMI_DEFAULT_MQTT_PORT)
     val mqttUsername = preferences.load(
-        R.string.preferences_key_mqtt_username, "sesami")
+        R.string.preferences_key_mqtt_username, NUKI_SESAMI_DEFAULT_MQTT_USERNAME)
     val mqttPassword = preferences.load(
-        R.string.preferences_key_mqtt_password, "")
+        R.string.preferences_key_mqtt_password, NUKI_SESAMI_DEFAULT_MQTT_PASSWORD)
     val bluetoothAddress = preferences.load(
-        R.string.preferences_key_bluetooth_address, "B8:27:EB:B9:2A:F0")
+        R.string.preferences_key_bluetooth_address, NUKI_SESAMI_DEFAULT_BLUETOOTH_ADDRESS)
     val bluetoothChannel = preferences.load(
-        R.string.preferences_key_bluetooth_channel, "4")
+        R.string.preferences_key_bluetooth_channel, NUKI_SESAMI_DEFAULT_BLUETOOTH_CHANNEL)
 
     if (simulation) {
         val sesami =  NukiSesamiClientSimulation(
