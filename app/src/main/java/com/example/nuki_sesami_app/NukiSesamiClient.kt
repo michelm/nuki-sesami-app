@@ -42,7 +42,7 @@ class NukiSesamiMqtt(
     var error = ObservableState("")
 
     /** Contains last received message of topics */
-    val messages = mutableMapOf<String, String>()
+    private val messages = mutableMapOf<String, String>()
 
     /** List of subscribers to message events */
     private val observers = ArrayList<(String, String) -> Unit>()
@@ -100,9 +100,9 @@ class NukiSesamiMqtt(
             error.value = ""
             mqtt.connect(options, this)
         } catch (ex: MqttException) {
-            error.value = ex.toString()
+            error.value = "connect.MqttException: $ex"
         } catch (ex: Exception) {
-            error.value = ex.toString()
+            error.value = "connect.Exception: $ex"
         }
     }
 
@@ -160,7 +160,7 @@ class NukiSesamiMqtt(
     // MqttCallback
     override fun connectionLost(cause: Throwable?) {
         connected.value = false
-        error.value = cause.toString()
+        error.value = "connectionLost: ${cause.toString()}"
         scheduleReconnect()
     }
 
@@ -198,18 +198,18 @@ class NukiSesamiMqtt(
     // IMqttActionListener: connect callback
     override fun onFailure(asyncActionToken: IMqttToken?, exception: Throwable?) {
         connected.value = false
-        error.value = exception.toString()
+        error.value = "onFailure: ${exception.toString()}"
     }
 }
 
 open class NukiSesamiClient (
-    var nukiDeviceID: String,
-    var mqttHostname: String,
-    var mqttPort: Int,
-    var mqttUsername: String,
-    var mqttPassword: String,
-    var bluetoothAddress: String,
-    var bluetoothChannel: Int
+    private var nukiDeviceID: String,
+    private var mqttHostname: String,
+    private var mqttPort: Int,
+    private var mqttUsername: String,
+    private var mqttPassword: String,
+    private var bluetoothAddress: String,
+    private var bluetoothChannel: Int
 ) {
     var doorState = ObservableState(DoorState.Unknown)
         protected set

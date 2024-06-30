@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
@@ -27,6 +28,7 @@ import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Star
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedButton
@@ -406,6 +408,9 @@ fun LogicalView(
         Row (verticalAlignment = Alignment.CenterVertically
         ){
             ElevatedButton(
+                modifier = Modifier
+                    .padding(20.dp)
+                    .size(210.dp),
                 enabled = action != DoorAction.None,
                 onClick = {
                     when(action) {
@@ -413,13 +418,16 @@ fun LogicalView(
                         DoorAction.Close -> sesami.closeDoor()
                         DoorAction.Open -> sesami.openDoor(hold = hold)
                     }
-                }
+                },
+                elevation = ButtonDefaults.elevatedButtonElevation(defaultElevation = 10.dp)
             ) {
                 Icon(
-                    modifier = Modifier.padding(end = 5.dp),
+                    modifier = Modifier
+                        .padding(end = 1.dp)
+                        .size(42.dp),
                     imageVector = Icons.Filled.Lock,
                     contentDescription = "Localized Description")
-                Text(doorActionText(action), fontSize = 36.sp)
+                Text(doorActionText(action), fontSize = 44.sp)
             }
         }
 
@@ -746,14 +754,14 @@ fun AboutViewEntry(caption: String, value: String)
 fun AboutView(
     modifier: Modifier = Modifier
 ) {
-    val appName = "nuki-sesami"
-    val appVersion = BuildConfig.VERSION_NAME
-    val buildType = BuildConfig.BUILD_TYPE
+    val name = "nuki-sesami"
+    val version = BuildConfig.VERSION_NAME
+    val build = BuildConfig.BUILD_TYPE
     val description = stringResource(R.string.about_view_description)
 
     Box(modifier = modifier
-            .padding(start=20.dp, end=20.dp)
-            .fillMaxSize(),
+        .padding(start = 20.dp, end = 20.dp)
+        .fillMaxSize(),
     ) {
         Column(
             horizontalAlignment = Alignment.Start
@@ -763,9 +771,9 @@ fun AboutView(
             Text(description)
             HorizontalDivider()
             Spacer(modifier=Modifier.padding(vertical=40.dp))
-            AboutViewEntry(stringResource(R.string.about_view_entry_caption_application), appName)
-            AboutViewEntry(stringResource(R.string.about_view_entry_caption_version), appVersion)
-            AboutViewEntry(stringResource(R.string.about_view_entry_caption_build_type), buildType)
+            AboutViewEntry(stringResource(R.string.about_view_entry_caption_application), name)
+            AboutViewEntry(stringResource(R.string.about_view_entry_caption_version), version)
+            AboutViewEntry(stringResource(R.string.about_view_entry_caption_build_type), build)
         }
     }
 }
