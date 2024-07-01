@@ -61,6 +61,8 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.org.eclipse.paho.client.mqtt)
     implementation(libs.org.eclipse.paho.android.service)
+    implementation(libs.zxing.core)
+    implementation(libs.gson)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

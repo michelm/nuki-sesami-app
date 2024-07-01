@@ -4,14 +4,18 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
@@ -29,6 +33,7 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedButton
@@ -55,8 +60,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -65,6 +72,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat.getString
 import com.example.nuki_sesami_app.ui.theme.NukiSesamiAppTheme
 
@@ -150,6 +158,29 @@ fun connectionStateText(connected: Boolean): String {
     }
 }
 
+@Composable
+fun QRCodeDialog(
+    onDismissRequest: () -> Unit,
+    preferences: UserPreferences,
+) {
+    val qrcode = QRConfig(preferences)
+
+    Dialog(onDismissRequest = { onDismissRequest() }) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(320.dp)
+                .padding(10.dp),
+            shape = RoundedCornerShape(10.dp),
+        ) {
+            Box {
+                val qrCode = qrcode.generateQRCode(400, 400)
+                Image(qrCode.asImageBitmap(), "QR code")
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
@@ -164,18 +195,12 @@ fun MainScreen(
     var appBarTitleRID by remember { mutableStateOf(R.string.app_bar_title_home) }
     var settingsChanged by remember { mutableStateOf(false) }
     var snackBarMessage by remember { mutableStateOf("") }
-    //val simulated by remember { mutableStateOf(simulation) }
 
-    preferences.subscribe { _, _ -> // (key, value) arguments not used
-        // Remember settings have changed; use updated settings when leaving view
-        settingsChanged = true
-    }
-
-    val changeView = fun (next: ViewSelected) {
+    val changeView = fun (next: ViewSelected, titleID: Int): Int {
         val current = viewSelected
 
         if (next == current) {
-            return
+            return titleID
         }
 
         if (current == ViewSelected.SettingsView && settingsChanged) {
@@ -200,6 +225,18 @@ fun MainScreen(
 
         viewSelected = next
         settingsChanged = false
+        return titleID
+    }
+
+    preferences.subscribe { _, _ -> // (key, value) arguments not used
+        // Remember settings have changed; use updated settings when leaving view
+        settingsChanged = true
+    }
+
+    sesami.mqttConnected.subscribe { connected ->
+        if (connected) {
+            snackBarMessage = "mqtt(${sesami.mqttHostname}:${sesami.mqttPort})"
+        }
     }
 
     Scaffold (
@@ -225,8 +262,7 @@ fun MainScreen(
                     },
                     actions = {
                         IconButton(onClick = {
-                            changeView(ViewSelected.LogicalView)
-                            appBarTitleRID = R.string.app_bar_title_home
+                            appBarTitleRID = changeView(ViewSelected.LogicalView, R.string.app_bar_title_home)
                         }) {
                             Icon(
                                 imageVector = Icons.Filled.Home,
@@ -234,8 +270,7 @@ fun MainScreen(
                             )
                         }
                         IconButton(onClick = {
-                            changeView(ViewSelected.DetailedStatusView)
-                            appBarTitleRID = R.string.app_bar_title_detailed_status
+                            appBarTitleRID = changeView(ViewSelected.DetailedStatusView, R.string.app_bar_title_detailed_status)
                         }) {
                             Icon(
                                 imageVector = Icons.Filled.DateRange,
@@ -243,8 +278,7 @@ fun MainScreen(
                             )
                         }
                         IconButton(onClick = {
-                            changeView(ViewSelected.SettingsView)
-                            appBarTitleRID = R.string.app_bar_title_settings
+                            appBarTitleRID = changeView(ViewSelected.SettingsView, R.string.app_bar_title_settings)
                         }) {
                             Icon(
                                 imageVector = Icons.Filled.Settings,
@@ -256,35 +290,35 @@ fun MainScreen(
                 DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.menu_item_logical_view)) },
-                        onClick = { changeView(ViewSelected.LogicalView)
-                                    appBarTitleRID = R.string.app_bar_title_home
-                                    menuExpanded = false
-                                  },
+                        onClick = {
+                            appBarTitleRID = changeView(ViewSelected.LogicalView, R.string.app_bar_title_home)
+                            menuExpanded = false
+                        },
                         leadingIcon = { Icon(Icons.Outlined.Home, contentDescription = null) }
                     )
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.menu_item_detailed_status)) },
-                        onClick = { changeView(ViewSelected.DetailedStatusView)
-                                    appBarTitleRID = R.string.app_bar_title_detailed_status
-                                    menuExpanded = false
-                                  },
+                        onClick = {
+                            appBarTitleRID = changeView(ViewSelected.DetailedStatusView, R.string.app_bar_title_detailed_status)
+                            menuExpanded = false
+                        },
                         leadingIcon = { Icon(Icons.Outlined.DateRange, contentDescription = null) }
                     )
                     HorizontalDivider()
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.menu_item_settings)) },
-                        onClick = { changeView(ViewSelected.SettingsView)
-                                    appBarTitleRID = R.string.app_bar_title_settings
-                                    menuExpanded = false
-                                  },
+                        onClick = {
+                            appBarTitleRID = changeView(ViewSelected.SettingsView, R.string.app_bar_title_settings)
+                            menuExpanded = false
+                        },
                         leadingIcon = { Icon(Icons.Outlined.Settings, contentDescription = null) }
                     )
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.menu_item_about)) },
-                        onClick = { changeView(ViewSelected.AboutView)
-                                    appBarTitleRID = R.string.app_bar_title_about
-                                    menuExpanded = false
-                                  },
+                        onClick = {
+                            appBarTitleRID = changeView(ViewSelected.AboutView, R.string.app_bar_title_about)
+                            menuExpanded = false
+                        },
                         leadingIcon = { Icon(Icons.Outlined.Info, contentDescription = null) }
                     )
                 }
@@ -609,6 +643,26 @@ fun parseBluetoothChannelArg(arg: Int?): Int? {
 }
 
 @Composable
+fun SettingsViewQRButton(
+    onClick: () -> Unit,
+    drawableResID: Int,
+    caption: String
+) {
+
+    ElevatedButton(
+        modifier = Modifier.padding(end = 5.dp),
+        onClick = onClick
+    ) {
+        Icon(
+            modifier = Modifier.padding(end = 3.dp).size(20.dp),
+            painter = painterResource(drawableResID),
+            contentDescription = "Localized Description"
+        )
+        Text(caption, fontSize = 18.sp)
+    }
+}
+
+@Composable
 fun SettingsView(
     modifier: Modifier = Modifier,
     preferences: UserPreferences,
@@ -644,99 +698,127 @@ fun SettingsView(
     var validMqttPort by remember { mutableStateOf (true) }
     var validBluetoothChannel by remember { mutableStateOf (true) }
     var validNukiDeviceID by remember { mutableStateOf (true) }
+    val openQRCodeDialog = remember { mutableStateOf(false) }
 
-    Column(
-        modifier = modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        TextField(
-            value = nukiDeviceID,
-            onValueChange = {
-                nukiDeviceID = it
-                validNukiDeviceID = isValidNukiDeviceIDArg(it)
-                if (validNukiDeviceID) {
-                    preferences.save(R.string.preferences_key_nuki_device_id, nukiDeviceID)
-                }
-            },
-            label = { Text(stringResource(R.string.settings_label_nuki_device_id)) },
-            singleLine = true,
-            isError = !validNukiDeviceID
-        )
+    Box {
+        Column(
+            modifier = modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                SettingsViewQRButton(
+                    onClick = { openQRCodeDialog.value = true },
+                    drawableResID = R.drawable.qr_code_2_24px,
+                    caption = "code"
+                )
 
-        TextField(
-            value = mqttHostname,
-            onValueChange = {
-                // TODO: check if valid hostname or IP(6) address?
-                mqttHostname = it
-                preferences.save(R.string.preferences_key_mqtt_hostname, mqttHostname)
-            },
-            label = { Text(stringResource(R.string.settings_label_mqtt_hostname)) },
-            singleLine = true
-        )
+                SettingsViewQRButton(
+                    onClick = {},
+                    drawableResID = R.drawable.qr_code_scanner_24px,
+                    caption = "scan"
+                )
+            }
 
-        TextField(
-            value = mqttPort,
-            onValueChange = {
-                val port = parseMqttPortArg(it.toIntOrNull())
-                if (port != null) {
-                    preferences.save(R.string.preferences_key_mqtt_port, port)
-                }
-                mqttPort = it
-                validMqttPort = (port != null)
-            },
-            label = { Text(stringResource(R.string.settings_label_mqtt_port)) },
-            singleLine = true,
-            isError = !validMqttPort
-        )
+            TextField(
+                value = nukiDeviceID,
+                onValueChange = {
+                    nukiDeviceID = it
+                    validNukiDeviceID = isValidNukiDeviceIDArg(it)
+                    if (validNukiDeviceID) {
+                        preferences.save(R.string.preferences_key_nuki_device_id, nukiDeviceID)
+                    }
+                },
+                label = { Text(stringResource(R.string.settings_label_nuki_device_id)) },
+                singleLine = true,
+                isError = !validNukiDeviceID
+            )
 
-        TextField(
-            value = mqttUsername,
-            onValueChange = {
-                mqttUsername = it
-                preferences.save(R.string.preferences_key_mqtt_username, mqttUsername)
-            },
-            label = { Text(stringResource(R.string.settings_label_mqtt_username)) },
-            singleLine = true
-        )
+            TextField(
+                value = mqttHostname,
+                onValueChange = {
+                    // TODO: check if valid hostname or IP(6) address?
+                    mqttHostname = it
+                    preferences.save(R.string.preferences_key_mqtt_hostname, mqttHostname)
+                },
+                label = { Text(stringResource(R.string.settings_label_mqtt_hostname)) },
+                singleLine = true
+            )
 
-        TextField(
-            value = mqttPassword,
-            onValueChange = {
-                mqttPassword = it
-                preferences.save(R.string.preferences_key_mqtt_password, mqttPassword)
-            },
-            label = { Text(stringResource(R.string.settings_label_mqtt_password)) },
-            singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
-        )
+            TextField(
+                value = mqttPort,
+                onValueChange = {
+                    val port = parseMqttPortArg(it.toIntOrNull())
+                    if (port != null) {
+                        preferences.save(R.string.preferences_key_mqtt_port, port)
+                    }
+                    mqttPort = it
+                    validMqttPort = (port != null)
+                },
+                label = { Text(stringResource(R.string.settings_label_mqtt_port)) },
+                singleLine = true,
+                isError = !validMqttPort
+            )
 
-        TextField(
-            value = bluetoothAddress,
-            onValueChange = {
-                // TODO: check if valid bluetooth address
-                bluetoothAddress = it
-                preferences.save(R.string.preferences_key_bluetooth_address, bluetoothAddress)
-            },
-            label = { Text(stringResource(R.string.settings_label_bluetooth_address)) },
-            singleLine = true
-        )
+            TextField(
+                value = mqttUsername,
+                onValueChange = {
+                    mqttUsername = it
+                    preferences.save(R.string.preferences_key_mqtt_username, mqttUsername)
+                },
+                label = { Text(stringResource(R.string.settings_label_mqtt_username)) },
+                singleLine = true
+            )
 
-        TextField(
-            value = bluetoothChannel,
-            onValueChange = {
-                val channel = parseBluetoothChannelArg(it.toIntOrNull())
-                if (channel != null) {
-                    preferences.save(R.string.preferences_key_bluetooth_channel, channel)
-                }
-                bluetoothChannel = it
-                validBluetoothChannel = (channel != null)
-            },
-            label = { Text(stringResource(R.string.settings_label_bluetooth_channel)) },
-            singleLine = true,
-            isError = !validBluetoothChannel
-        )
+            TextField(
+                value = mqttPassword,
+                onValueChange = {
+                    mqttPassword = it
+                    preferences.save(R.string.preferences_key_mqtt_password, mqttPassword)
+                },
+                label = { Text(stringResource(R.string.settings_label_mqtt_password)) },
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+            )
+
+            TextField(
+                value = bluetoothAddress,
+                onValueChange = {
+                    // TODO: check if valid bluetooth address
+                    bluetoothAddress = it
+                    preferences.save(R.string.preferences_key_bluetooth_address, bluetoothAddress)
+                },
+                label = { Text(stringResource(R.string.settings_label_bluetooth_address)) },
+                singleLine = true
+            )
+
+            TextField(
+                value = bluetoothChannel,
+                onValueChange = {
+                    val channel = parseBluetoothChannelArg(it.toIntOrNull())
+                    if (channel != null) {
+                        preferences.save(R.string.preferences_key_bluetooth_channel, channel)
+                    }
+                    bluetoothChannel = it
+                    validBluetoothChannel = (channel != null)
+                },
+                label = { Text(stringResource(R.string.settings_label_bluetooth_channel)) },
+                singleLine = true,
+                isError = !validBluetoothChannel
+            )
+        }
+
+        when {
+            openQRCodeDialog.value -> {
+                QRCodeDialog(
+                    onDismissRequest = { openQRCodeDialog.value = false },
+                    preferences = preferences,
+                )
+            }
+        }
     }
 }
 
