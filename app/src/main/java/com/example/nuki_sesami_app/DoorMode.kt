@@ -1,5 +1,8 @@
 package com.example.nuki_sesami_app
 
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+
 enum class DoorMode(val value: Int) {
     OpenClose(0),  // Door is open for a brief moment, the actual time is defined by the
                         // ERREKA 'Smart Evolution' electric door controller
@@ -15,5 +18,14 @@ enum class DoorMode(val value: Int) {
             val t = value.toIntOrNull()
             return DoorMode.from(t ?: 0)
         }
+    }
+}
+
+@Composable
+fun doorModeText(mode: DoorMode): String {
+    return when(mode) {
+        DoorMode.OpenHold -> stringResource(R.string.door_mode_openhold)
+        DoorMode.OpenClose -> stringResource(R.string.door_mode_open_close)
+        DoorMode.Unknown -> stringResource(R.string.door_mode_unknown)
     }
 }

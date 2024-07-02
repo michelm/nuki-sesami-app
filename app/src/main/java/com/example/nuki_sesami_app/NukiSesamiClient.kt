@@ -135,7 +135,7 @@ class NukiSesamiMqtt(
             return
         }
 
-        val delay: Long = 1000L // 1[s]
+        val delay = 1000L // 1[s]
         val period: Long = reconnectInterval * 1000L
         Log.d("mqtt", "schedule(delay=${delay} [ms]), reconnect in {$period} [ms]")
 
