@@ -4,5 +4,4 @@ enum class ViewSelected {
     LogicalView,
     DetailedStatusView,
     SettingsView,
-    AboutView
 }

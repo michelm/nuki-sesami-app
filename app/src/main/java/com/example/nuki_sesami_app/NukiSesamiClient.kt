@@ -203,9 +203,9 @@ class NukiSesamiMqtt(
 }
 
 open class NukiSesamiClient (
-    var nukiDeviceID: String,
-    var mqttHostname: String,
-    var mqttPort: Int,
+    private var nukiDeviceID: String,
+    private var mqttHostname: String,
+    private var mqttPort: Int,
     private var mqttUsername: String,
     private var mqttPassword: String,
     private var bluetoothAddress: String,

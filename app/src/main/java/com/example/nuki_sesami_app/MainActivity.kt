@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
@@ -42,6 +43,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.HorizontalDivider
@@ -60,14 +62,19 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.AndroidUriHandler
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -158,24 +165,110 @@ fun connectionStateText(connected: Boolean): String {
     }
 }
 
-@Composable
-fun QRCodeDialog(
-    onDismissRequest: () -> Unit,
-    preferences: UserPreferences,
-) {
-    val qrcode = QRConfig(preferences)
+private const val TAG_URL = "ANNOTATION_TAG_URL"
 
-    Dialog(onDismissRequest = { onDismissRequest() }) {
+fun attachLink(
+    source: String,
+    segment: String,
+    link: String
+): AnnotatedString {
+    val builder = AnnotatedString.Builder()
+    builder.append(source) // load current text into the builder
+    val start = source.indexOf(segment) // start of span marked by 'segment'
+    val end = start + segment.length // end of span marked by 'segment'
+
+    builder.addStyle(
+        SpanStyle(
+            color = Color.Blue,
+            textDecoration = TextDecoration.Underline,
+        ),
+        start,
+        end
+    )
+
+    builder.addStringAnnotation(
+        TAG_URL, // link can be accessed using this tag
+        link,
+        start,
+        end
+    )
+    return builder.toAnnotatedString()
+}
+
+@Composable
+fun AboutDialogEntry(
+    caption: String,
+    value: String
+) {
+    Row(verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text("${caption}: ")
+        Text(value, fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
+fun AboutDialog(
+    onDismissRequest: () -> Unit,
+) {
+    val version = BuildConfig.VERSION_NAME
+    val build = BuildConfig.BUILD_TYPE
+    val link = "https://github.com/michelm/nuki-sesami-app"
+    val text = stringResource(R.string.about_view_description)
+    val annotatedText = attachLink(
+        source = text,
+        segment = "nuki-sesami-app",
+        link = link,
+    )
+    val uriHandler = AndroidUriHandler(LocalContext.current)
+
+    Dialog(
+        onDismissRequest = { onDismissRequest() }
+    ) {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(320.dp)
-                .padding(10.dp),
-            shape = RoundedCornerShape(10.dp),
+                .padding(16.dp),
+            shape = RoundedCornerShape(16.dp),
         ) {
-            Box {
-                val qrCode = qrcode.generateQRCode(400, 400)
-                Image(qrCode.asImageBitmap(), "QR code")
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.Start,
+            ) {
+                Text(
+                    stringResource(R.string.about_view_description_caption),
+                    style = MaterialTheme.typography.titleLarge,
+                )
+                HorizontalDivider(thickness = 2.dp)
+                ClickableText(
+                    modifier = Modifier.padding(1.dp),
+                    text = annotatedText,
+                    style = MaterialTheme.typography.bodyMedium,
+                    onClick = {
+                        annotatedText
+                            .getStringAnnotations(TAG_URL, it, it)
+                            .firstOrNull()
+                            ?.let { url -> uriHandler.openUri(url.item) }
+                    }
+                )
+
+                HorizontalDivider(thickness = 2.dp)
+                AboutDialogEntry(stringResource(R.string.about_view_entry_caption_version), version)
+                AboutDialogEntry(stringResource(R.string.about_view_entry_caption_build_type), build)
+                Spacer(Modifier.padding(5.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    TextButton(
+                        onClick = { onDismissRequest() },
+                        modifier = Modifier.padding(8.dp),
+                    ) {
+                        Text("Close")
+                    }
+                }
             }
         }
     }
@@ -195,6 +288,7 @@ fun MainScreen(
     var appBarTitleRID by remember { mutableStateOf(R.string.app_bar_title_home) }
     var settingsChanged by remember { mutableStateOf(false) }
     var snackBarMessage by remember { mutableStateOf("") }
+    val openAboutDialog = remember { mutableStateOf(false) }
 
     val changeView = fun (next: ViewSelected, titleID: Int): Int {
         val current = viewSelected
@@ -231,12 +325,6 @@ fun MainScreen(
     preferences.subscribe { _, _ -> // (key, value) arguments not used
         // Remember settings have changed; use updated settings when leaving view
         settingsChanged = true
-    }
-
-    sesami.mqttConnected.subscribe { connected ->
-        if (connected) {
-            snackBarMessage = "mqtt(${sesami.mqttHostname}:${sesami.mqttPort})"
-        }
     }
 
     Scaffold (
@@ -316,7 +404,7 @@ fun MainScreen(
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.menu_item_about)) },
                         onClick = {
-                            appBarTitleRID = changeView(ViewSelected.AboutView, R.string.app_bar_title_about)
+                            openAboutDialog.value = true
                             menuExpanded = false
                         },
                         leadingIcon = { Icon(Icons.Outlined.Info, contentDescription = null) }
@@ -332,6 +420,14 @@ fun MainScreen(
                     viewSelected = viewSelected,
                     modifier = modifier.padding(innerPadding)
                 )
+
+                when {
+                    openAboutDialog.value -> {
+                        AboutDialog(
+                            onDismissRequest = { openAboutDialog.value = false },
+                        )
+                    }
+                }
             }
         },
         bottomBar = {
@@ -371,7 +467,6 @@ fun MainContent(
         ViewSelected.LogicalView -> LogicalView(sesami, modifier, preferences)
         ViewSelected.DetailedStatusView -> DetailedStatusView(sesami, modifier)
         ViewSelected.SettingsView -> SettingsView(modifier, preferences)
-        ViewSelected.AboutView -> AboutView(modifier)
     }
 }
 
@@ -643,18 +738,44 @@ fun parseBluetoothChannelArg(arg: Int?): Int? {
 }
 
 @Composable
+fun QRCodeDialog(
+    onDismissRequest: () -> Unit,
+    preferences: UserPreferences,
+) {
+    val qrcode = QRConfig(preferences)
+
+    Dialog(
+        onDismissRequest = { onDismissRequest() }
+    ) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(320.dp)
+                .padding(10.dp),
+            shape = RoundedCornerShape(10.dp),
+        ) {
+            Box {
+                val qrCode = qrcode.generateQRCode(400, 400)
+                Image(qrCode.asImageBitmap(), "QR code")
+            }
+        }
+    }
+}
+
+@Composable
 fun SettingsViewQRButton(
     onClick: () -> Unit,
     drawableResID: Int,
     caption: String
 ) {
-
     ElevatedButton(
         modifier = Modifier.padding(end = 5.dp),
         onClick = onClick
     ) {
         Icon(
-            modifier = Modifier.padding(end = 3.dp).size(20.dp),
+            modifier = Modifier
+                .padding(end = 3.dp)
+                .size(20.dp),
             painter = painterResource(drawableResID),
             contentDescription = "Localized Description"
         )
@@ -818,44 +939,6 @@ fun SettingsView(
                     preferences = preferences,
                 )
             }
-        }
-    }
-}
-
-@Composable
-fun AboutViewEntry(caption: String, value: String)
-{
-    Row(verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text("${caption}: ")
-        Text(value, fontWeight = FontWeight.Bold)
-    }
-}
-
-@Composable
-fun AboutView(
-    modifier: Modifier = Modifier
-) {
-    val name = "nuki-sesami"
-    val version = BuildConfig.VERSION_NAME
-    val build = BuildConfig.BUILD_TYPE
-    val description = stringResource(R.string.about_view_description)
-
-    Box(modifier = modifier
-        .padding(start = 20.dp, end = 20.dp)
-        .fillMaxSize(),
-    ) {
-        Column(
-            horizontalAlignment = Alignment.Start
-        ) {
-            Text(stringResource(R.string.about_view_description_caption), fontWeight = FontWeight.Bold)
-            HorizontalDivider()
-            Text(description)
-            HorizontalDivider()
-            Spacer(modifier=Modifier.padding(vertical=40.dp))
-            AboutViewEntry(stringResource(R.string.about_view_entry_caption_application), name)
-            AboutViewEntry(stringResource(R.string.about_view_entry_caption_version), version)
-            AboutViewEntry(stringResource(R.string.about_view_entry_caption_build_type), build)
         }
     }
 }

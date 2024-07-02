@@ -74,10 +74,9 @@
     <string name="about_view_entry_caption_version">version</string>
     <string name="about_view_entry_caption_build_type">build type</string>
     <string name="about_view_description_caption">Nuki Sesami</string>
-    <string name="about_view_description">Using this app you can open (and hold open) an electric door equipped with a Nuki 3.0 Pro smart lock.
-        The Nuki Sesami service will perform the logic for you when using an ERREKA Smart Evolution Pro electric door controller in combination with a Nuki 3.0 Pro smart lock.
-        When connected to the same WiFi network commands to, and status from, the Nuki Sesami service can be exchanged using the mqtt protocol.
-        Otherwise when paired the same can be achieved using Bluetooth.
+    <string name="about_view_description">
+        Open(hold) and close a door controlled by the Nuki Sesami service.
+        \nSee nuki-sesami-app on github for a detailed description.
     </string>
     <string name="snackbar_message_settings_updated">Settings updated</string>
 </resources>
