@@ -68,7 +68,10 @@ fun AboutDialog(
                     stringResource(R.string.about_view_description_caption),
                     style = MaterialTheme.typography.titleLarge,
                 )
-                HorizontalDivider(thickness = 2.dp)
+
+                HorizontalDivider(thickness = 2.dp, color = MaterialTheme.colorScheme.onSurface)
+                Spacer(Modifier.padding(2.dp))
+
                 ClickableText(
                     modifier = Modifier.padding(1.dp),
                     text = annotatedText,
@@ -81,7 +84,9 @@ fun AboutDialog(
                     }
                 )
 
-                HorizontalDivider(thickness = 2.dp)
+                HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.onSurface)
+                Spacer(Modifier.padding(2.dp))
+
                 AboutDialogEntry(stringResource(R.string.about_view_entry_caption_version), version)
                 AboutDialogEntry(stringResource(R.string.about_view_entry_caption_build_type), build)
                 Spacer(Modifier.padding(5.dp))
