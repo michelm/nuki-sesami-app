@@ -1,5 +1,6 @@
 package com.example.nuki_sesami_app
 
+import android.util.Log
 import org.eclipse.paho.client.mqttv3.IMqttActionListener
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken
 import org.eclipse.paho.client.mqttv3.IMqttToken
@@ -8,6 +9,7 @@ import org.eclipse.paho.client.mqttv3.MqttCallback
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions
 import org.eclipse.paho.client.mqttv3.MqttException
 import org.eclipse.paho.client.mqttv3.MqttMessage
+import org.eclipse.paho.client.mqttv3.MqttSecurityException
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence
 import java.util.Timer
 import kotlin.concurrent.timer
@@ -31,7 +33,7 @@ class NukiSesamiMqtt(
     hostname: String,
     port: Int,
     private var username: String,
-    private var password: String,
+    private var passwd: String,
     clientId: String,
     private val nukiDeviceID: String,
 ): MqttCallback, IMqttActionListener {
@@ -64,6 +66,10 @@ class NukiSesamiMqtt(
         mqtt.setCallback(this)
     }
 
+    protected fun finalize() {
+        deactivate()
+    }
+
     /** Notifies all observers a new message for a specific topic has arrived */
     private fun notify(topic: String, message: String) {
         observers.forEach {
@@ -89,30 +95,38 @@ class NukiSesamiMqtt(
             return
         }
 
-        val options = MqttConnectOptions()
-        options.isCleanSession = false
-        if (username.isNotEmpty() && password.isNotEmpty()) {
-            options.password = password.toCharArray()
-            options.userName = username
+        Log.d("mqtt", "connect(this=$this)")
+
+        val options = MqttConnectOptions().apply {
+            isCleanSession = false
+            keepAliveInterval = 60
+            if (username.isNotEmpty() && passwd.isNotEmpty()) {
+                password = passwd.toCharArray()
+                userName = username
+            }
         }
 
         try {
             error.value = ""
             mqtt.connect(options, this)
         } catch (ex: MqttException) {
+            Log.e("mqtt", "connect failed: $ex")
             error.value = "connect.MqttException: $ex"
-        } catch (ex: Exception) {
-            error.value = "connect.Exception: $ex"
+        } catch (ex: MqttSecurityException) {
+            Log.e("mqtt", "connect failed: $ex")
+            error.value = "connect.MqttSecurityException: $ex"
         }
     }
 
     private fun disconnect() {
+        Log.d("mqtt", "disconnect(this=$this)")
         mqtt.disconnectForcibly(disconnectTimeout)
         connected.value = false
         error.value = ""
     }
 
     private fun scheduleReconnect() {
+        Log.d("mqtt", "schedule, cancel running reconnects")
         reconnectTimer?.cancel()
         reconnectTimer?.purge()
         reconnectTimer = null
@@ -121,11 +135,15 @@ class NukiSesamiMqtt(
             return
         }
 
+        val delay: Long = 1000L // 1[s]
+        val period: Long = reconnectInterval * 1000L
+        Log.d("mqtt", "schedule(delay=${delay} [ms]), reconnect in {$period} [ms]")
+
         reconnectTimer = timer(
             name = "NukiSesamiMqttRetryTimer",
             daemon = false,
-            initialDelay = 1000, // 1[s]
-            period = reconnectInterval * 1000,
+            initialDelay = delay,
+            period = period,
             action = {
                 if (!connected.value) {
                     connect()
@@ -143,13 +161,14 @@ class NukiSesamiMqtt(
             return
         }
 
-        connect()
         reconnectInterval = retryInterval
-        scheduleReconnect()
+        Log.d("mqtt", "activate(retry=$reconnectInterval)")
+        connect()
     }
 
     /** Deactivates the MQTT connection */
     fun deactivate() {
+        Log.d("mqtt", "deactivate")
         disconnect()
         reconnectInterval = 0
         reconnectTimer?.cancel()
@@ -159,6 +178,7 @@ class NukiSesamiMqtt(
 
     // MqttCallback
     override fun connectionLost(cause: Throwable?) {
+        Log.w("mqtt", "connectionLost: ${cause.toString()}")
         connected.value = false
         error.value = "connectionLost: ${cause.toString()}"
         scheduleReconnect()
@@ -170,9 +190,11 @@ class NukiSesamiMqtt(
             return
         }
 
+        val key = topic.toString()
         val msg = message.payload.decodeToString()
-        messages[topic] = msg
-        notify(topic, msg)
+        Log.d("mqtt", "message(${key}): $msg")
+        messages[key] = msg
+        notify(key, msg)
     }
 
     // MqttCallback
@@ -186,6 +208,7 @@ class NukiSesamiMqtt(
         this.reconnectTimer?.purge()
         this.reconnectTimer = null
 
+        Log.i("mqtt", "connected(this=$this)")
         connected.value = true
         error.value = ""
         mqtt.subscribe("nuki/${nukiDeviceID}/state", 0)
@@ -197,8 +220,10 @@ class NukiSesamiMqtt(
 
     // IMqttActionListener: connect callback
     override fun onFailure(asyncActionToken: IMqttToken?, exception: Throwable?) {
+        Log.w("mqtt", "connect failed: ${exception.toString()}")
         connected.value = false
         error.value = "onFailure: ${exception.toString()}"
+        scheduleReconnect()
     }
 }
 
@@ -241,6 +266,10 @@ open class NukiSesamiClient (
     private val mqttReconnectInterval = 5L
     private val mqttClientId = "NukiSesamiApp" // UUID.randomUUID().toString()
     private var mqtt: NukiSesamiMqtt? = null
+
+    protected fun finalize() {
+        deactivate()
+    }
 
     private fun getNukiSesamiMqtt(): NukiSesamiMqtt {
         val mqtt = NukiSesamiMqtt(

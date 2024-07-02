@@ -55,7 +55,6 @@ import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
@@ -67,6 +66,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.AndroidUriHandler
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
@@ -515,18 +515,16 @@ fun LogicalView(
     var hold by remember { mutableStateOf(preferences.load(
         R.string.preferences_key_switch_openhold, true)) }
 
-    LaunchedEffect(sesami) {
-        sesami.doorAction.subscribe { value: DoorAction -> action = value }
-        sesami.doorState.subscribe { value: DoorState -> door = value }
-        sesami.lockState.subscribe { value: LockState -> lock = value }
-        sesami.mqttConnected.subscribe { value: Boolean ->
-            mqtt = value
-            connected = mqtt || bluetooth
-        }
-        sesami.bluetoothConnected.subscribe { value: Boolean ->
-            bluetooth = value
-            connected = mqtt || bluetooth
-        }
+    sesami.doorAction.subscribe { value: DoorAction -> action = value }
+    sesami.doorState.subscribe { value: DoorState -> door = value }
+    sesami.lockState.subscribe { value: LockState -> lock = value }
+    sesami.mqttConnected.subscribe { value: Boolean ->
+        mqtt = value
+        connected = mqtt || bluetooth
+    }
+    sesami.bluetoothConnected.subscribe { value: Boolean ->
+        bluetooth = value
+        connected = mqtt || bluetooth
     }
 
     Column (
@@ -645,17 +643,15 @@ fun DetailedStatusView(
     var mqttError by remember { mutableStateOf("") }
     var bluetooth by remember { mutableStateOf(false) }
 
-    LaunchedEffect(sesami) {
-        sesami.doorAction.subscribe { value: DoorAction -> action = value }
-        sesami.doorState.subscribe { value: DoorState -> door = value }
-        sesami.doorMode.subscribe { value: DoorMode -> mode = value }
-        sesami.doorSensor.subscribe { value: DoorSensorState -> sensor = value }
-        sesami.lockState.subscribe { value: LockState -> lock = value }
-        sesami.version.subscribe { value: String -> serverVersion = value }
-        sesami.mqttConnected.subscribe { value: Boolean -> mqtt = value }
-        sesami.mqttError.subscribe { value: String -> mqttError = value }
-        sesami.bluetoothConnected.subscribe { value: Boolean -> bluetooth = value }
-    }
+    sesami.doorAction.subscribe { value: DoorAction -> action = value }
+    sesami.doorState.subscribe { value: DoorState -> door = value }
+    sesami.doorMode.subscribe { value: DoorMode -> mode = value }
+    sesami.doorSensor.subscribe { value: DoorSensorState -> sensor = value }
+    sesami.lockState.subscribe { value: LockState -> lock = value }
+    sesami.version.subscribe { value: String -> serverVersion = value }
+    sesami.mqttConnected.subscribe { value: Boolean -> mqtt = value }
+    sesami.mqttError.subscribe { value: String -> mqttError = value }
+    sesami.bluetoothConnected.subscribe { value: Boolean -> bluetooth = value }
 
     Column(
         modifier = modifier.fillMaxSize(),
@@ -743,6 +739,11 @@ fun QRCodeDialog(
     preferences: UserPreferences,
 ) {
     val qrcode = QRConfig(preferences)
+    var pixels: Int
+
+    LocalDensity.current.run {
+        pixels = 400.dp.toPx().toInt()
+    }
 
     Dialog(
         onDismissRequest = { onDismissRequest() }
@@ -755,7 +756,7 @@ fun QRCodeDialog(
             shape = RoundedCornerShape(10.dp),
         ) {
             Box {
-                val qrCode = qrcode.generateQRCode(400, 400)
+                val qrCode = qrcode.generateQRCode(pixels, pixels)
                 Image(qrCode.asImageBitmap(), "QR code")
             }
         }
