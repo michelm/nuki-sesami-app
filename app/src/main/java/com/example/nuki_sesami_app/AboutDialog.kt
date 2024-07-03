@@ -2,6 +2,9 @@ package com.example.nuki_sesami_app
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -39,15 +42,16 @@ fun AboutDialogEntry(
 fun AboutDialog(
     onDismissRequest: () -> Unit,
 ) {
-    val version = BuildConfig.VERSION_NAME
-    val build = BuildConfig.BUILD_TYPE
-    val link = "https://github.com/michelm/nuki-sesami-app"
+    val version by remember { mutableStateOf(BuildConfig.VERSION_NAME) }
+    val build by remember { mutableStateOf(BuildConfig.BUILD_TYPE) }
     val text = stringResource(R.string.about_view_description)
+    val url by remember { mutableStateOf("https://github.com/michelm/nuki-sesami-app") }
     val annotatedText = LinkedAnnotatedString(
         source = text,
         segment = "nuki-sesami-app",
-        link = link,
+        link = url,
     ).create()
+    val richText by remember { mutableStateOf(annotatedText) }
     val uriHandler = AndroidUriHandler(LocalContext.current)
 
     Dialog(
@@ -74,14 +78,9 @@ fun AboutDialog(
 
                 ClickableText(
                     modifier = Modifier.padding(1.dp),
-                    text = annotatedText,
+                    text = richText,
                     style = MaterialTheme.typography.bodyMedium,
-                    onClick = {
-                        annotatedText
-                            .getStringAnnotations(LINK_TAG_URL, it, it)
-                            .firstOrNull()
-                            ?.let { url -> uriHandler.openUri(url.item) }
-                    }
+                    onClick = { uriHandler.openUri(url) }
                 )
 
                 HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.onSurface)

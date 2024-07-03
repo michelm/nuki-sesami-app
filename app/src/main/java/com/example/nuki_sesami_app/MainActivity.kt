@@ -46,29 +46,55 @@ import androidx.core.content.ContextCompat.getString
 import com.example.nuki_sesami_app.ui.theme.NukiSesamiAppTheme
 
 class MainActivity : ComponentActivity() {
+    private lateinit var preferences: UserPreferences
+    private lateinit var sesami: NukiSesamiClient
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
+            preferences = getUserPreferences()
+            sesami = getSesamiClient(
+                simulation = false // TODO: get from preferences?
+            )
+
             NukiSesamiAppTheme {
                 MainScreen(
-                    simulation = false,
+                    preferences = preferences,
+                    sesami = sesami,
                     modifier = Modifier
                 )
             }
+
+            sesami.configure(preferences)
+            sesami.activate()
         }
     }
+}
+
+@Composable
+fun getUserPreferences(): UserPreferences {
+    return UserPreferences(LocalContext.current)
+}
+
+@Composable
+fun getSesamiClient(simulation: Boolean): NukiSesamiClient {
+    val context = LocalContext.current
+
+    return if (simulation)
+        NukiSesamiClientSimulation(context)
+    else
+        NukiSesamiClient(context)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
-    simulation: Boolean,
+    preferences: UserPreferences,
+    sesami: NukiSesamiClient,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val preferences = remember { UserPreferences(context) }
-    val sesami = remember { getSesamiClient(preferences, activate=true, simulation=simulation) }
     var menuExpanded by remember { mutableStateOf(false) }
     var viewSelected by remember { mutableStateOf(ViewSelected.LogicalView) }
     var appBarTitleRID by remember { mutableStateOf(R.string.app_bar_title_home) }
@@ -85,15 +111,7 @@ fun MainScreen(
 
         if (current == ViewSelected.SettingsView && settingsChanged) {
             // Use updated settings in sesami
-            sesami.configure(
-                preferences.load(R.string.preferences_key_nuki_device_id, NUKI_SESAMI_DEFAULT_DEVICE_ID),
-                preferences.load(R.string.preferences_key_mqtt_hostname, NUKI_SESAMI_DEFAULT_MQTT_HOSTNAME),
-                preferences.load(R.string.preferences_key_mqtt_port, NUKI_SESAMI_DEFAULT_MQTT_PORT),
-                preferences.load(R.string.preferences_key_mqtt_username, NUKI_SESAMI_DEFAULT_MQTT_USERNAME),
-                preferences.load(R.string.preferences_key_mqtt_password, NUKI_SESAMI_DEFAULT_MQTT_PASSWORD),
-                preferences.load(R.string.preferences_key_bluetooth_address, NUKI_SESAMI_DEFAULT_BLUETOOTH_ADDRESS),
-                preferences.load(R.string.preferences_key_bluetooth_channel, NUKI_SESAMI_DEFAULT_BLUETOOTH_CHANNEL),
-            )
+            sesami.configure(preferences)
 
             // Enforce sesami to use new settings
             sesami.deactivate()
@@ -230,7 +248,7 @@ fun MainScreen(
                     modifier = Modifier.padding(8.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (simulation) {
+                        if (sesami.simulated()) {
                             Icon(Icons.Outlined.Star, contentDescription = "Localized description")
                             Text(text = "demo   ")
                         }
@@ -259,10 +277,19 @@ fun MainContent(
 @Preview(showBackground = true)
 @Composable
 fun MainScreenPreview() {
+    val preferences: UserPreferences = getUserPreferences()
+    val sesami: NukiSesamiClient = getSesamiClient(
+        simulation = true
+    )
+
     NukiSesamiAppTheme {
         MainScreen(
-            simulation = true,
+            preferences = preferences,
+            sesami = sesami,
             modifier = Modifier
         )
     }
+
+    sesami.configure(preferences)
+    sesami.activate()
 }

@@ -1,5 +1,7 @@
 package com.example.nuki_sesami_app
 
+import android.app.Activity
+import android.content.Context
 import android.util.Log
 import org.eclipse.paho.client.mqttv3.IMqttActionListener
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken
@@ -7,16 +9,14 @@ import org.eclipse.paho.client.mqttv3.IMqttToken
 import org.eclipse.paho.client.mqttv3.MqttAsyncClient
 import org.eclipse.paho.client.mqttv3.MqttCallback
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions
-import org.eclipse.paho.client.mqttv3.MqttException
 import org.eclipse.paho.client.mqttv3.MqttMessage
-import org.eclipse.paho.client.mqttv3.MqttSecurityException
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence
 import java.util.Timer
 import kotlin.concurrent.timer
 import kotlin.random.Random
 
 const val NUKI_SESAMI_DEFAULT_DEVICE_ID = "3807B7EC"
-const val NUKI_SESAMI_DEFAULT_MQTT_HOSTNAME = "raspi-door"
+const val NUKI_SESAMI_DEFAULT_MQTT_HOSTNAME = "192.168.178.56"
 const val NUKI_SESAMI_DEFAULT_MQTT_PORT = 1883
 const val NUKI_SESAMI_DEFAULT_MQTT_USERNAME = "sesami"
 const val NUKI_SESAMI_DEFAULT_MQTT_PASSWORD = ""
@@ -34,40 +34,79 @@ class NukiSesamiMqtt(
     port: Int,
     private var username: String,
     private var passwd: String,
-    clientId: String,
     private val nukiDeviceID: String,
-): MqttCallback, IMqttActionListener {
+) {
     /** Observable state, will be set to true when connected */
     var connected = ObservableState(false)
 
     /** Observable state, will be set in case of (connection) errors */
     var error = ObservableState("")
 
-    /** Contains last received message of topics */
-    private val messages = mutableMapOf<String, String>()
-
     /** List of subscribers to message events */
     private val observers = ArrayList<(String, String) -> Unit>()
 
     /** Contains the actual PAHO client handle */
     private var mqtt: MqttAsyncClient = MqttAsyncClient(
-        "tcp://$hostname:$port", clientId, MemoryPersistence())
-
-    /** Used for retry connect logic */
-    private var reconnectTimer: Timer? = null
-
-    /** Reconnect interval in seconds */
-    private var reconnectInterval: Long = 0L
-
-    /** Disconnect timeout in milliseconds */
-    private val disconnectTimeout: Long = 2000L
+        "tcp://$hostname:$port",
+        MqttAsyncClient.generateClientId(),
+        MemoryPersistence()
+    )
 
     init {
-        mqtt.setCallback(this)
+        mqtt.setCallback(object : MqttCallback{
+            override fun connectionLost(cause: Throwable?) {
+                Log.w("mqtt", "connectionLost: ${cause.toString()}")
+                connected.value = false
+                error.value = "connectionLost: ${cause.toString()}"
+                // TODO: throw exception?
+            }
+
+            override fun messageArrived(topic: String?, message: MqttMessage?) {
+                if (topic != null && message != null) {
+                    val msg = message.payload.decodeToString()
+                    Log.d("mqtt", "message(${topic}): $msg")
+                    notify(topic, msg)
+                }
+            }
+
+            override fun deliveryComplete(token: IMqttDeliveryToken?) {
+                // no action
+            }
+        })
+
+        val options = MqttConnectOptions().apply {
+            isCleanSession = false
+            keepAliveInterval = 60
+            if (username.isNotEmpty() && passwd.isNotEmpty()) {
+                password = passwd.toCharArray()
+                userName = username
+            }
+        }
+
+        mqtt.connect(options, object : IMqttActionListener {
+            override fun onSuccess(asyncActionToken: IMqttToken) {
+                Log.i("mqtt", "connected(this=$this)")
+                connected.value = true
+                error.value = ""
+                mqtt.subscribe("nuki/${nukiDeviceID}/state", 0)
+                mqtt.subscribe("nuki/${nukiDeviceID}/doorsensorState", 0)
+                mqtt.subscribe("sesami/${nukiDeviceID}/state", 0)
+                mqtt.subscribe("sesami/${nukiDeviceID}/mode", 0)
+                mqtt.subscribe("sesami/${nukiDeviceID}/version", 0)
+            }
+
+            override fun onFailure(asyncActionToken: IMqttToken, exception: Throwable) {
+                Log.w("mqtt", "connect failed: $exception")
+                connected.value = false
+                error.value = "onFailure: $exception"
+                // TODO: throw exception?
+            }
+        })
     }
 
-    protected fun finalize() {
-        deactivate()
+    fun close() {
+        Log.d("mqtt", "close(this=$this)")
+        mqtt.close()
     }
 
     /** Notifies all observers a new message for a specific topic has arrived */
@@ -89,152 +128,17 @@ class NukiSesamiMqtt(
         message.qos = 0
         mqtt.publish(topic, message)
     }
-
-    private fun connect() {
-        if (connected.value) {
-            return
-        }
-
-        Log.d("mqtt", "connect(this=$this)")
-
-        val options = MqttConnectOptions().apply {
-            isCleanSession = false
-            keepAliveInterval = 60
-            if (username.isNotEmpty() && passwd.isNotEmpty()) {
-                password = passwd.toCharArray()
-                userName = username
-            }
-        }
-
-        try {
-            error.value = ""
-            mqtt.connect(options, this)
-        } catch (ex: MqttException) {
-            Log.e("mqtt", "connect failed: $ex")
-            error.value = "connect.MqttException: $ex"
-        } catch (ex: MqttSecurityException) {
-            Log.e("mqtt", "connect failed: $ex")
-            error.value = "connect.MqttSecurityException: $ex"
-        }
-    }
-
-    private fun disconnect() {
-        Log.d("mqtt", "disconnect(this=$this)")
-        mqtt.disconnectForcibly(disconnectTimeout)
-        connected.value = false
-        error.value = ""
-    }
-
-    private fun scheduleReconnect() {
-        Log.d("mqtt", "schedule, cancel running reconnects")
-        reconnectTimer?.cancel()
-        reconnectTimer?.purge()
-        reconnectTimer = null
-
-        if (reconnectInterval == 0L) {
-            return
-        }
-
-        val delay = 1000L // 1[s]
-        val period: Long = reconnectInterval * 1000L
-        Log.d("mqtt", "schedule(delay=${delay} [ms]), reconnect in {$period} [ms]")
-
-        reconnectTimer = timer(
-            name = "NukiSesamiMqttRetryTimer",
-            daemon = false,
-            initialDelay = delay,
-            period = period,
-            action = {
-                if (!connected.value) {
-                    connect()
-                }
-            }
-        )
-    }
-
-    /** Activates the MQTT connection
-     *  - Retry interval is in seconds
-     *  - If the retry interval is not specified the client will not reconnect
-     */
-    fun activate(retryInterval: Long = 0) {
-        if (connected.value) {
-            return
-        }
-
-        reconnectInterval = retryInterval
-        Log.d("mqtt", "activate(retry=$reconnectInterval)")
-        connect()
-    }
-
-    /** Deactivates the MQTT connection */
-    fun deactivate() {
-        Log.d("mqtt", "deactivate")
-        disconnect()
-        reconnectInterval = 0
-        reconnectTimer?.cancel()
-        reconnectTimer?.purge()
-        reconnectTimer = null
-    }
-
-    // MqttCallback
-    override fun connectionLost(cause: Throwable?) {
-        Log.w("mqtt", "connectionLost: ${cause.toString()}")
-        connected.value = false
-        error.value = "connectionLost: ${cause.toString()}"
-        scheduleReconnect()
-    }
-
-    // MqttCallback
-    override fun messageArrived(topic: String?, message: MqttMessage?) {
-        if (topic == null || message == null) {
-            return
-        }
-
-        val key = topic.toString()
-        val msg = message.payload.decodeToString()
-        Log.d("mqtt", "message(${key}): $msg")
-        messages[key] = msg
-        notify(key, msg)
-    }
-
-    // MqttCallback
-    override fun deliveryComplete(token: IMqttDeliveryToken?) {
-        // no action
-    }
-
-    // IMqttActionListener: connect callback
-    override fun onSuccess(asyncActionToken: IMqttToken?) {
-        this.reconnectTimer?.cancel()
-        this.reconnectTimer?.purge()
-        this.reconnectTimer = null
-
-        Log.i("mqtt", "connected(this=$this)")
-        connected.value = true
-        error.value = ""
-        mqtt.subscribe("nuki/${nukiDeviceID}/state", 0)
-        mqtt.subscribe("nuki/${nukiDeviceID}/doorsensorState", 0)
-        mqtt.subscribe("sesami/${nukiDeviceID}/state", 0)
-        mqtt.subscribe("sesami/${nukiDeviceID}/mode", 0)
-        mqtt.subscribe("sesami/${nukiDeviceID}/version", 0)
-    }
-
-    // IMqttActionListener: connect callback
-    override fun onFailure(asyncActionToken: IMqttToken?, exception: Throwable?) {
-        Log.w("mqtt", "connect failed: ${exception.toString()}")
-        connected.value = false
-        error.value = "onFailure: ${exception.toString()}"
-        scheduleReconnect()
-    }
 }
 
 open class NukiSesamiClient (
-    private var nukiDeviceID: String,
-    private var mqttHostname: String,
-    private var mqttPort: Int,
-    private var mqttUsername: String,
-    private var mqttPassword: String,
-    private var bluetoothAddress: String,
-    private var bluetoothChannel: Int
+    private val context: Context,
+    private var nukiDeviceID: String = NUKI_SESAMI_DEFAULT_DEVICE_ID,
+    private var mqttHostname: String = NUKI_SESAMI_DEFAULT_MQTT_HOSTNAME,
+    private var mqttPort: Int = NUKI_SESAMI_DEFAULT_MQTT_PORT,
+    private var mqttUsername: String = NUKI_SESAMI_DEFAULT_MQTT_USERNAME,
+    private var mqttPassword: String = NUKI_SESAMI_DEFAULT_MQTT_PASSWORD,
+    private var bluetoothAddress: String = NUKI_SESAMI_DEFAULT_BLUETOOTH_ADDRESS,
+    private var bluetoothChannel: Int = NUKI_SESAMI_DEFAULT_BLUETOOTH_CHANNEL
 ) {
     var doorState = ObservableState(DoorState.Unknown)
         protected set
@@ -263,13 +167,7 @@ open class NukiSesamiClient (
     var mqttError = ObservableState("")
         protected set
 
-    private val mqttReconnectInterval = 5L
-    private val mqttClientId = "NukiSesamiApp" // UUID.randomUUID().toString()
     private var mqtt: NukiSesamiMqtt? = null
-
-    protected fun finalize() {
-        deactivate()
-    }
 
     private fun getNukiSesamiMqtt(): NukiSesamiMqtt {
         val mqtt = NukiSesamiMqtt(
@@ -277,66 +175,76 @@ open class NukiSesamiClient (
             mqttPort,
             mqttUsername,
             mqttPassword,
-            mqttClientId,
             nukiDeviceID
         )
 
-        mqtt.connected.subscribe { value -> mqttConnected.value = value }
-        mqtt.error.subscribe { value -> mqttError.value = value }
+        mqtt.connected.subscribe { value ->
+            (context as Activity).runOnUiThread {
+                mqttConnected.value = value
+            }
+        }
+
+        mqtt.error.subscribe { value ->
+            (context as Activity).runOnUiThread {
+                mqttError.value = value
+            }
+        }
 
         mqtt.subscribe { topic, message ->
-            when(topic) {
-                "sesami/${nukiDeviceID}/version" -> version.value = message
-                "sesami/${nukiDeviceID}/state" -> {
-                    doorState.value = DoorState.from(message)
-                    doorAction.value = when(doorState.value) {
-                        DoorState.Closed -> DoorAction.Open
-                        DoorState.OpenHold -> DoorAction.Close
-                        DoorState.Opened -> DoorAction.None
-                        DoorState.Unknown -> DoorAction.None
+            (context as Activity).runOnUiThread {
+                when (topic) {
+                    "sesami/${nukiDeviceID}/version" -> version.value = message
+                    "sesami/${nukiDeviceID}/state" -> {
+                        doorState.value = DoorState.from(message)
+                        doorAction.value = when (doorState.value) {
+                            DoorState.Closed -> DoorAction.Open
+                            DoorState.OpenHold -> DoorAction.Close
+                            DoorState.Opened -> DoorAction.None
+                            DoorState.Unknown -> DoorAction.None
+                        }
                     }
+
+                    "sesami/${nukiDeviceID}/mode" -> doorMode.value = DoorMode.from(message)
+                    "nuki/${nukiDeviceID}/doorsensorState" -> {
+                        doorSensor.value = DoorSensorState.from(message)
+                    }
+
+                    "nuki/${nukiDeviceID}/state" -> lockState.value = LockState.from(message)
                 }
-                "sesami/${nukiDeviceID}/mode" -> doorMode.value = DoorMode.from(message)
-                "nuki/${nukiDeviceID}/doorsensorState" -> {
-                    doorSensor.value = DoorSensorState.from(message)
-                }
-                "nuki/${nukiDeviceID}/state" -> lockState.value = LockState.from(message)
             }
         }
 
         return mqtt
     }
 
+    open fun simulated(): Boolean { return false }
+
     open fun activate() {
         if (mqtt == null) {
             mqtt = getNukiSesamiMqtt()
-            mqtt!!.activate(mqttReconnectInterval)
         }
     }
 
     open fun deactivate() {
-        if (mqtt != null) {
-            mqtt!!.deactivate()
-            mqtt = null
-        }
+        mqtt!!.close()
+        mqtt = null
     }
 
-    open fun configure(
-        nukiDeviceID: String,
-        mqttHostname: String,
-        mqttPort: Int,
-        mqttUsername: String,
-        mqttPassword: String,
-        bluetoothAddress: String,
-        bluetoothChannel: Int,
-    ) {
-        this.nukiDeviceID = nukiDeviceID
-        this.mqttHostname = mqttHostname
-        this.mqttPort = mqttPort
-        this.mqttUsername = mqttUsername
-        this.mqttPassword = mqttPassword
-        this.bluetoothAddress = bluetoothAddress
-        this.bluetoothChannel = bluetoothChannel
+    fun configure(preferences: UserPreferences) {
+        nukiDeviceID = preferences.load(
+            R.string.preferences_key_nuki_device_id, NUKI_SESAMI_DEFAULT_DEVICE_ID)
+        mqttHostname = preferences.load(
+            R.string.preferences_key_mqtt_hostname, NUKI_SESAMI_DEFAULT_MQTT_HOSTNAME)
+        mqttPort = preferences.load(
+            R.string.preferences_key_mqtt_port, NUKI_SESAMI_DEFAULT_MQTT_PORT)
+        mqttUsername = preferences.load(
+            R.string.preferences_key_mqtt_username, NUKI_SESAMI_DEFAULT_MQTT_USERNAME)
+        mqttPassword = preferences.load(
+            R.string.preferences_key_mqtt_password, NUKI_SESAMI_DEFAULT_MQTT_PASSWORD)
+        bluetoothAddress = preferences.load(
+            R.string.preferences_key_bluetooth_address, NUKI_SESAMI_DEFAULT_BLUETOOTH_ADDRESS)
+        bluetoothChannel = preferences.load(
+            R.string.preferences_key_bluetooth_channel, NUKI_SESAMI_DEFAULT_BLUETOOTH_CHANNEL)
     }
 
     open fun openDoor(hold: Boolean) {
@@ -357,21 +265,9 @@ open class NukiSesamiClient (
 }
 
 class NukiSesamiClientSimulation(
-    nukiDeviceID: String,
-    mqttHostname: String,
-    mqttPort: Int,
-    mqttUsername: String,
-    mqttPassword: String,
-    bluetoothAddress: String,
-    bluetoothChannel: Int,
-) : NukiSesamiClient(
-    nukiDeviceID,
-    mqttHostname,
-    mqttPort,
-    mqttUsername,
-    mqttPassword,
-    bluetoothAddress,
-    bluetoothChannel,
+    context: Context
+): NukiSesamiClient(
+    context = context
 ) {
     /** Simulation timer used to mimic to some dummy behavior */
     private var simulationTimer: Timer? = null
@@ -384,6 +280,8 @@ class NukiSesamiClientSimulation(
         lockState.value = LockState.Unlocked
         version.value = "1.2.3"
     }
+
+    override fun simulated(): Boolean { return true }
 
     override fun openDoor(hold: Boolean) {
         doorMode.value = if (hold) DoorMode.OpenHold else DoorMode.OpenClose
@@ -434,56 +332,4 @@ class NukiSesamiClientSimulation(
         this.simulationTimer = null
         this.lockState.value = LockState.Undefined
     }
-}
-
-fun getSesamiClient(preferences: UserPreferences, activate: Boolean,
-                    simulation: Boolean = false): NukiSesamiClient {
-    val nukiDeviceID = preferences.load(
-        R.string.preferences_key_nuki_device_id, NUKI_SESAMI_DEFAULT_DEVICE_ID)
-    val mqttHostname = preferences.load(
-        R.string.preferences_key_mqtt_hostname, NUKI_SESAMI_DEFAULT_MQTT_HOSTNAME)
-    val mqttPort = preferences.load(
-        R.string.preferences_key_mqtt_port, NUKI_SESAMI_DEFAULT_MQTT_PORT)
-    val mqttUsername = preferences.load(
-        R.string.preferences_key_mqtt_username, NUKI_SESAMI_DEFAULT_MQTT_USERNAME)
-    val mqttPassword = preferences.load(
-        R.string.preferences_key_mqtt_password, NUKI_SESAMI_DEFAULT_MQTT_PASSWORD)
-    val bluetoothAddress = preferences.load(
-        R.string.preferences_key_bluetooth_address, NUKI_SESAMI_DEFAULT_BLUETOOTH_ADDRESS)
-    val bluetoothChannel = preferences.load(
-        R.string.preferences_key_bluetooth_channel, NUKI_SESAMI_DEFAULT_BLUETOOTH_CHANNEL)
-
-    if (simulation) {
-        val sesami =  NukiSesamiClientSimulation(
-            nukiDeviceID,
-            mqttHostname,
-            mqttPort,
-            mqttUsername,
-            mqttPassword,
-            bluetoothAddress,
-            bluetoothChannel,
-        )
-
-        if (activate) {
-            sesami.activate()
-        }
-
-        return sesami
-    }
-
-    val sesami = NukiSesamiClient(
-        nukiDeviceID,
-        mqttHostname,
-        mqttPort,
-        mqttUsername,
-        mqttPassword,
-        bluetoothAddress,
-        bluetoothChannel,
-    )
-
-    if (activate) {
-        sesami.activate()
-    }
-
-    return sesami
 }
