@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -143,7 +144,7 @@ fun LogicalView(
             )
         }
 
-        HorizontalDivider(modifier = Modifier.padding(20.dp))
+        HorizontalDivider(thickness = 2.dp, modifier = Modifier.padding(20.dp))
 
         Row (verticalAlignment = Alignment.CenterVertically
         ) {
@@ -170,4 +171,14 @@ fun LogicalView(
             }
         }
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun LogicalViewPreview() {
+    LogicalView(
+        sesami = NukiSesamiClientSimulation(),
+        modifier = Modifier,
+        preferences = UserPreferences(),
+    )
 }

@@ -53,10 +53,11 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            preferences = getUserPreferences()
-            sesami = getSesamiClient(
-                simulation = false // TODO: get from preferences?
-            )
+            val context = LocalContext.current
+            preferences = UserPreferences(context)
+
+            val simulation = preferences.load(R.string.preferences_key_simulation_mode, false)
+            sesami = if (simulation) NukiSesamiClientSimulation() else NukiSesamiClient()
 
             NukiSesamiAppTheme {
                 MainScreen(
@@ -67,24 +68,9 @@ class MainActivity : ComponentActivity() {
             }
 
             sesami.configure(preferences)
-            sesami.activate()
+            sesami.activate(context)
         }
     }
-}
-
-@Composable
-fun getUserPreferences(): UserPreferences {
-    return UserPreferences(LocalContext.current)
-}
-
-@Composable
-fun getSesamiClient(simulation: Boolean): NukiSesamiClient {
-    val context = LocalContext.current
-
-    return if (simulation)
-        NukiSesamiClientSimulation(context)
-    else
-        NukiSesamiClient(context)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -114,8 +100,9 @@ fun MainScreen(
             sesami.configure(preferences)
 
             // Enforce sesami to use new settings
-            sesami.deactivate()
-            sesami.activate()
+            // TODO: fixme
+            //sesami.deactivate()
+            //sesami.activate()
 
             // Inform user
             snackBarMessage = getString(context, R.string.snackbar_message_settings_updated)
@@ -277,19 +264,11 @@ fun MainContent(
 @Preview(showBackground = true)
 @Composable
 fun MainScreenPreview() {
-    val preferences: UserPreferences = getUserPreferences()
-    val sesami: NukiSesamiClient = getSesamiClient(
-        simulation = true
-    )
-
     NukiSesamiAppTheme {
         MainScreen(
-            preferences = preferences,
-            sesami = sesami,
+            preferences = UserPreferences(),
+            sesami = NukiSesamiClientSimulation(),
             modifier = Modifier
         )
     }
-
-    sesami.configure(preferences)
-    sesami.activate()
 }

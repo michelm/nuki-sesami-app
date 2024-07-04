@@ -11,7 +11,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
 import androidx.compose.material3.ElevatedButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.getValue
@@ -22,10 +25,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.tooling.preview.Preview
 
 fun isValidNukiDeviceIDArg(arg: String): Boolean {
     try {
@@ -110,6 +115,16 @@ fun SettingsView(
         R.string.preferences_key_bluetooth_channel, NUKI_SESAMI_DEFAULT_BLUETOOTH_CHANNEL).toString()
     ) }
 
+    var simulation by remember { mutableStateOf(preferences.load(
+        R.string.preferences_key_simulation_mode, false)
+    ) }
+    var preferBluetooth by remember { mutableStateOf (preferences.load(
+        R.string.preferences_key_prefer_bluetooth, false)
+    ) }
+    var preferBluetoothText by remember { mutableStateOf(
+        if (preferBluetooth) "bluetooth" else "mqtt"
+    ) }
+
     var validMqttPort by remember { mutableStateOf (true) }
     var validBluetoothAddress by remember { mutableStateOf (true) }
     var validBluetoothChannel by remember { mutableStateOf (true) }
@@ -119,7 +134,7 @@ fun SettingsView(
     Box {
         Column(
             modifier = modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.Center,
+            verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(
@@ -130,7 +145,6 @@ fun SettingsView(
                     drawableResID = R.drawable.qr_code_2_24px,
                     caption = "code"
                 )
-
                 SettingsViewButton(
                     onClick = { /* TODO: open QR scanner and processing logic */ },
                     drawableResID = R.drawable.qr_code_scanner_24px,
@@ -138,97 +152,156 @@ fun SettingsView(
                 )
             }
 
-            TextField(
-                value = nukiDeviceID,
-                onValueChange = {
-                    nukiDeviceID = it
-                    validNukiDeviceID = isValidNukiDeviceIDArg(it)
-                    if (validNukiDeviceID) {
-                        preferences.save(R.string.preferences_key_nuki_device_id, nukiDeviceID)
-                    }
-                },
-                label = { Text(stringResource(R.string.settings_label_nuki_device_id)) },
-                singleLine = true,
-                isError = !validNukiDeviceID
+            HorizontalDivider(
+                thickness = 2.dp,
+                modifier = Modifier.padding(
+                    start = 20.dp,
+                    end = 20.dp,
+                    top = 5.dp,
+                    bottom = 5.dp
+                )
             )
 
-            TextField(
-                value = mqttHostname,
-                onValueChange = {
-                    // TODO: check if valid hostname or IP(6) address?
-                    mqttHostname = it
-                    preferences.save(R.string.preferences_key_mqtt_hostname, mqttHostname)
-                },
-                label = { Text(stringResource(R.string.settings_label_mqtt_hostname)) },
-                singleLine = true
-            )
+            Column(horizontalAlignment = Alignment.Start
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Switch(
+                        modifier = Modifier.padding(end = 5.dp),
+                        checked = simulation,
+                        onCheckedChange = {
+                            simulation = it
+                            preferences.save(R.string.preferences_key_simulation_mode, it)
+                        }
+                    )
+                    Text(
+                        "demo",
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
 
-            TextField(
-                value = mqttPort,
-                onValueChange = {
-                    val port = parseMqttPortArg(it.toIntOrNull())
-                    if (port != null) {
-                        preferences.save(R.string.preferences_key_mqtt_port, port)
-                    }
-                    mqttPort = it
-                    validMqttPort = (port != null)
-                },
-                label = { Text(stringResource(R.string.settings_label_mqtt_port)) },
-                singleLine = true,
-                isError = !validMqttPort
-            )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Switch(
+                        modifier = Modifier.padding(end = 5.dp),
+                        checked = preferBluetooth,
+                        onCheckedChange = {
+                            preferBluetooth = it
+                            preferences.save(R.string.preferences_key_prefer_bluetooth, it)
+                            preferBluetoothText = if (preferBluetooth) "bluetooth" else "mqtt"
+                        }
+                    )
+                    Text(
+                        preferBluetoothText,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                if (preferBluetooth) {
+                    TextField(
+                        value = bluetoothAddress,
+                        onValueChange = {
+                            validBluetoothAddress = BluetoothAdapter.checkBluetoothAddress(it)
+                            bluetoothAddress = it
 
-            TextField(
-                value = mqttUsername,
-                onValueChange = {
-                    mqttUsername = it
-                    preferences.save(R.string.preferences_key_mqtt_username, mqttUsername)
-                },
-                label = { Text(stringResource(R.string.settings_label_mqtt_username)) },
-                singleLine = true
-            )
+                            if (validBluetoothAddress) {
+                                preferences.save(
+                                    R.string.preferences_key_bluetooth_address,
+                                    bluetoothAddress
+                                )
+                            }
+                        },
+                        label = { Text(stringResource(R.string.settings_label_bluetooth_address)) },
+                        singleLine = true,
+                        isError = !validBluetoothAddress
+                    )
 
-            TextField(
-                value = mqttPassword,
-                onValueChange = {
-                    mqttPassword = it
-                    preferences.save(R.string.preferences_key_mqtt_password, mqttPassword)
-                },
-                label = { Text(stringResource(R.string.settings_label_mqtt_password)) },
-                singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
-            )
+                    TextField(
+                        value = bluetoothChannel,
+                        onValueChange = {
+                            val channel = parseBluetoothChannelArg(it.toIntOrNull())
+                            if (channel != null) {
+                                preferences.save(
+                                    R.string.preferences_key_bluetooth_channel,
+                                    channel
+                                )
+                            }
+                            bluetoothChannel = it
+                            validBluetoothChannel = (channel != null)
+                        },
+                        label = { Text(stringResource(R.string.settings_label_bluetooth_channel)) },
+                        singleLine = true,
+                        isError = !validBluetoothChannel
+                    )
+                } else {
+                    TextField(
+                        value = nukiDeviceID,
+                        onValueChange = {
+                            nukiDeviceID = it
+                            validNukiDeviceID = isValidNukiDeviceIDArg(it)
+                            if (validNukiDeviceID) {
+                                preferences.save(
+                                    R.string.preferences_key_nuki_device_id,
+                                    nukiDeviceID
+                                )
+                            }
+                        },
+                        label = { Text(stringResource(R.string.settings_label_nuki_device_id)) },
+                        singleLine = true,
+                        isError = !validNukiDeviceID
+                    )
 
-            TextField(
-                value = bluetoothAddress,
-                onValueChange = {
-                    validBluetoothAddress = BluetoothAdapter.checkBluetoothAddress(it)
-                    bluetoothAddress = it
+                    TextField(
+                        value = mqttHostname,
+                        onValueChange = {
+                            // TODO: check if valid hostname or IP(6) address?
+                            mqttHostname = it
+                            preferences.save(R.string.preferences_key_mqtt_hostname, mqttHostname)
+                        },
+                        label = { Text(stringResource(R.string.settings_label_mqtt_hostname)) },
+                        singleLine = true
+                    )
 
-                    if (validBluetoothAddress) {
-                        preferences.save(R.string.preferences_key_bluetooth_address, bluetoothAddress)
-                    }
-                },
-                label = { Text(stringResource(R.string.settings_label_bluetooth_address)) },
-                singleLine = true,
-                isError = !validBluetoothAddress
-            )
+                    TextField(
+                        value = mqttPort,
+                        onValueChange = {
+                            val port = parseMqttPortArg(it.toIntOrNull())
+                            if (port != null) {
+                                preferences.save(R.string.preferences_key_mqtt_port, port)
+                            }
+                            mqttPort = it
+                            validMqttPort = (port != null)
+                        },
+                        label = { Text(stringResource(R.string.settings_label_mqtt_port)) },
+                        singleLine = true,
+                        isError = !validMqttPort
+                    )
 
-            TextField(
-                value = bluetoothChannel,
-                onValueChange = {
-                    val channel = parseBluetoothChannelArg(it.toIntOrNull())
-                    if (channel != null) {
-                        preferences.save(R.string.preferences_key_bluetooth_channel, channel)
-                    }
-                    bluetoothChannel = it
-                    validBluetoothChannel = (channel != null)
-                },
-                label = { Text(stringResource(R.string.settings_label_bluetooth_channel)) },
-                singleLine = true,
-                isError = !validBluetoothChannel
-            )
+                    TextField(
+                        value = mqttUsername,
+                        onValueChange = {
+                            mqttUsername = it
+                            preferences.save(R.string.preferences_key_mqtt_username, mqttUsername)
+                        },
+                        label = { Text(stringResource(R.string.settings_label_mqtt_username)) },
+                        singleLine = true
+                    )
+
+                    TextField(
+                        value = mqttPassword,
+                        onValueChange = {
+                            mqttPassword = it
+                            preferences.save(R.string.preferences_key_mqtt_password, mqttPassword)
+                        },
+                        label = { Text(stringResource(R.string.settings_label_mqtt_password)) },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+                    )
+                }
+            }
         }
 
         when {
@@ -240,4 +313,13 @@ fun SettingsView(
             }
         }
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun SettingsViewPreview() {
+    SettingsView(
+        modifier = Modifier,
+        preferences = UserPreferences()
+    )
 }

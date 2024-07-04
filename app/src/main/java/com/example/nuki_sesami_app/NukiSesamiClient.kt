@@ -131,7 +131,6 @@ class NukiSesamiMqtt(
 }
 
 open class NukiSesamiClient (
-    private val context: Context,
     private var nukiDeviceID: String = NUKI_SESAMI_DEFAULT_DEVICE_ID,
     private var mqttHostname: String = NUKI_SESAMI_DEFAULT_MQTT_HOSTNAME,
     private var mqttPort: Int = NUKI_SESAMI_DEFAULT_MQTT_PORT,
@@ -169,7 +168,7 @@ open class NukiSesamiClient (
 
     private var mqtt: NukiSesamiMqtt? = null
 
-    private fun getNukiSesamiMqtt(): NukiSesamiMqtt {
+    private fun getNukiSesamiMqtt(context: Context): NukiSesamiMqtt {
         val mqtt = NukiSesamiMqtt(
             mqttHostname,
             mqttPort,
@@ -219,9 +218,9 @@ open class NukiSesamiClient (
 
     open fun simulated(): Boolean { return false }
 
-    open fun activate() {
+    open fun activate(context: Context) {
         if (mqtt == null) {
-            mqtt = getNukiSesamiMqtt()
+            mqtt = getNukiSesamiMqtt(context)
         }
     }
 
@@ -264,10 +263,7 @@ open class NukiSesamiClient (
     }
 }
 
-class NukiSesamiClientSimulation(
-    context: Context
-): NukiSesamiClient(
-    context = context
+class NukiSesamiClientSimulation: NukiSesamiClient(
 ) {
     /** Simulation timer used to mimic to some dummy behavior */
     private var simulationTimer: Timer? = null
@@ -289,7 +285,6 @@ class NukiSesamiClientSimulation(
         doorAction.value = DoorAction.Close
         lockState.value = LockState.Unlatched
         doorSensor.value = DoorSensorState.DoorOpened
-        this.activate()
     }
 
     override fun closeDoor() {
@@ -298,11 +293,10 @@ class NukiSesamiClientSimulation(
         doorAction.value = DoorAction.Open
         lockState.value = LockState.Unlocked
         doorSensor.value = DoorSensorState.DoorClosed
-        this.deactivate()
     }
 
     // Simulate start connection to MQTT / Bluetooth
-    override fun activate() {
+    override fun activate(context: Context) {
         if (this.simulationTimer != null) {
             return
         }
