@@ -1,4 +1,4 @@
-package com.example.nuki_sesami_app
+package com.example.nuki_sesami_app.ui.views
 
 import android.bluetooth.BluetoothAdapter
 import androidx.compose.foundation.layout.Arrangement
@@ -31,6 +31,19 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.nuki_sesami_app.NUKI_SESAMI_DEFAULT_BLUETOOTH_ADDRESS
+import com.example.nuki_sesami_app.NUKI_SESAMI_DEFAULT_BLUETOOTH_CHANNEL
+import com.example.nuki_sesami_app.NUKI_SESAMI_DEFAULT_DEVICE_ID
+import com.example.nuki_sesami_app.NUKI_SESAMI_DEFAULT_MQTT_HOSTNAME
+import com.example.nuki_sesami_app.NUKI_SESAMI_DEFAULT_MQTT_PASSWORD
+import com.example.nuki_sesami_app.NUKI_SESAMI_DEFAULT_MQTT_PORT
+import com.example.nuki_sesami_app.NUKI_SESAMI_DEFAULT_MQTT_USERNAME
+import com.example.nuki_sesami_app.NUKI_SESAMI_MAX_BLUETOOTH_CHANNEL
+import com.example.nuki_sesami_app.NUKI_SESAMI_MAX_MQTT_PORT
+import com.example.nuki_sesami_app.NUKI_SESAMI_MIN_BLUETOOTH_CHANNEL
+import com.example.nuki_sesami_app.NUKI_SESAMI_MIN_MQTT_PORT
+import com.example.nuki_sesami_app.R
+import com.example.nuki_sesami_app.UserPreferences
 
 fun isValidNukiDeviceIDArg(arg: String): Boolean {
     try {
@@ -88,31 +101,38 @@ fun SettingsView(
     preferences: UserPreferences,
 ) {
     var nukiDeviceID by remember { mutableStateOf(preferences.load(
-        R.string.preferences_key_nuki_device_id, NUKI_SESAMI_DEFAULT_DEVICE_ID)
+        R.string.preferences_key_nuki_device_id, NUKI_SESAMI_DEFAULT_DEVICE_ID
+    )
     ) }
 
     var mqttHostname by remember { mutableStateOf(preferences.load(
-        R.string.preferences_key_mqtt_hostname, NUKI_SESAMI_DEFAULT_MQTT_HOSTNAME)
+        R.string.preferences_key_mqtt_hostname, NUKI_SESAMI_DEFAULT_MQTT_HOSTNAME
+    )
     ) }
 
     var mqttPort by remember { mutableStateOf(preferences.load(
-        R.string.preferences_key_mqtt_port, NUKI_SESAMI_DEFAULT_MQTT_PORT).toString()
+        R.string.preferences_key_mqtt_port, NUKI_SESAMI_DEFAULT_MQTT_PORT
+    ).toString()
     ) }
 
     var mqttUsername by remember { mutableStateOf(preferences.load(
-        R.string.preferences_key_mqtt_username, NUKI_SESAMI_DEFAULT_MQTT_USERNAME)
+        R.string.preferences_key_mqtt_username, NUKI_SESAMI_DEFAULT_MQTT_USERNAME
+    )
     ) }
 
     var mqttPassword by remember { mutableStateOf(preferences.load(
-        R.string.preferences_key_mqtt_password, NUKI_SESAMI_DEFAULT_MQTT_PASSWORD)
+        R.string.preferences_key_mqtt_password, NUKI_SESAMI_DEFAULT_MQTT_PASSWORD
+    )
     ) }
 
     var bluetoothAddress by remember { mutableStateOf(preferences.load(
-        R.string.preferences_key_bluetooth_address, NUKI_SESAMI_DEFAULT_BLUETOOTH_ADDRESS)
+        R.string.preferences_key_bluetooth_address, NUKI_SESAMI_DEFAULT_BLUETOOTH_ADDRESS
+    )
     ) }
 
     var bluetoothChannel by remember { mutableStateOf(preferences.load(
-        R.string.preferences_key_bluetooth_channel, NUKI_SESAMI_DEFAULT_BLUETOOTH_CHANNEL).toString()
+        R.string.preferences_key_bluetooth_channel, NUKI_SESAMI_DEFAULT_BLUETOOTH_CHANNEL
+    ).toString()
     ) }
 
     var simulation by remember { mutableStateOf(preferences.load(

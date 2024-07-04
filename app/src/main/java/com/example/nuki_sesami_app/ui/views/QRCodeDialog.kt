@@ -1,4 +1,4 @@
-package com.example.nuki_sesami_app
+package com.example.nuki_sesami_app.ui.views
 
 import android.graphics.Bitmap
 import androidx.compose.foundation.Image
@@ -14,6 +14,15 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import com.example.nuki_sesami_app.NUKI_SESAMI_DEFAULT_BLUETOOTH_ADDRESS
+import com.example.nuki_sesami_app.NUKI_SESAMI_DEFAULT_BLUETOOTH_CHANNEL
+import com.example.nuki_sesami_app.NUKI_SESAMI_DEFAULT_DEVICE_ID
+import com.example.nuki_sesami_app.NUKI_SESAMI_DEFAULT_MQTT_HOSTNAME
+import com.example.nuki_sesami_app.NUKI_SESAMI_DEFAULT_MQTT_PASSWORD
+import com.example.nuki_sesami_app.NUKI_SESAMI_DEFAULT_MQTT_PORT
+import com.example.nuki_sesami_app.NUKI_SESAMI_DEFAULT_MQTT_USERNAME
+import com.example.nuki_sesami_app.R
+import com.example.nuki_sesami_app.UserPreferences
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.EncodeHintType
 import com.google.zxing.qrcode.QRCodeWriter
@@ -26,19 +35,26 @@ class QRConfig(
 
     private fun getItems(preferences: UserPreferences): Map<String, Any> {
         val nukiDeviceID = preferences.load(
-            R.string.preferences_key_nuki_device_id, NUKI_SESAMI_DEFAULT_DEVICE_ID)
+            R.string.preferences_key_nuki_device_id, NUKI_SESAMI_DEFAULT_DEVICE_ID
+        )
         val mqttHostname = preferences.load(
-            R.string.preferences_key_mqtt_hostname, NUKI_SESAMI_DEFAULT_MQTT_HOSTNAME)
+            R.string.preferences_key_mqtt_hostname, NUKI_SESAMI_DEFAULT_MQTT_HOSTNAME
+        )
         val mqttPort = preferences.load(
-            R.string.preferences_key_mqtt_port, NUKI_SESAMI_DEFAULT_MQTT_PORT)
+            R.string.preferences_key_mqtt_port, NUKI_SESAMI_DEFAULT_MQTT_PORT
+        )
         val mqttUsername = preferences.load(
-            R.string.preferences_key_mqtt_username, NUKI_SESAMI_DEFAULT_MQTT_USERNAME)
+            R.string.preferences_key_mqtt_username, NUKI_SESAMI_DEFAULT_MQTT_USERNAME
+        )
         val mqttPassword = preferences.load(
-            R.string.preferences_key_mqtt_password, NUKI_SESAMI_DEFAULT_MQTT_PASSWORD)
+            R.string.preferences_key_mqtt_password, NUKI_SESAMI_DEFAULT_MQTT_PASSWORD
+        )
         val bluetoothAddress = preferences.load(
-            R.string.preferences_key_bluetooth_address, NUKI_SESAMI_DEFAULT_BLUETOOTH_ADDRESS)
+            R.string.preferences_key_bluetooth_address, NUKI_SESAMI_DEFAULT_BLUETOOTH_ADDRESS
+        )
         val bluetoothChannel = preferences.load(
-            R.string.preferences_key_bluetooth_channel, NUKI_SESAMI_DEFAULT_BLUETOOTH_CHANNEL)
+            R.string.preferences_key_bluetooth_channel, NUKI_SESAMI_DEFAULT_BLUETOOTH_CHANNEL
+        )
 
         return mapOf(
             "nukiDeviceID" to nukiDeviceID,

@@ -1,4 +1,4 @@
-package com.example.nuki_sesami_app
+package com.example.nuki_sesami_app.ui.views
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -26,14 +26,21 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-
-@Composable
-fun connectionStateText(connected: Boolean): String {
-    return when (connected) {
-        true -> stringResource(R.string.connection_state_connected)
-        false -> stringResource(R.string.connection_state_not_connected)
-    }
-}
+import com.example.nuki_sesami_app.state.ConnectionType
+import com.example.nuki_sesami_app.state.DoorAction
+import com.example.nuki_sesami_app.state.DoorMode
+import com.example.nuki_sesami_app.state.DoorSensorState
+import com.example.nuki_sesami_app.state.DoorState
+import com.example.nuki_sesami_app.state.LockState
+import com.example.nuki_sesami_app.NukiSesamiClient
+import com.example.nuki_sesami_app.NukiSesamiClientSimulation
+import com.example.nuki_sesami_app.R
+import com.example.nuki_sesami_app.ui.misc.doorActionText
+import com.example.nuki_sesami_app.ui.misc.doorModeText
+import com.example.nuki_sesami_app.ui.misc.doorSensorText
+import com.example.nuki_sesami_app.ui.misc.doorStateText
+import com.example.nuki_sesami_app.ui.misc.lockStateText
+import com.example.nuki_sesami_app.ui.misc.connectionTypeText
 
 @Composable
 fun DetailedStatusViewEntry(
@@ -96,19 +103,24 @@ fun DetailedStatusView(
         ) {
             DetailedStatusViewEntry(
                 Icons.Filled.CheckCircle,
-                stringResource(R.string.detailed_status_view_door_action), doorActionText(action))
+                stringResource(R.string.detailed_status_view_door_action), doorActionText(action)
+            )
 
             DetailedStatusViewEntry(Icons.Filled.Home,
-                stringResource(R.string.detailed_status_view_door_state), doorStateText(door))
+                stringResource(R.string.detailed_status_view_door_state), doorStateText(door)
+            )
 
             DetailedStatusViewEntry(Icons.Filled.Info,
-                stringResource(R.string.detailed_status_view_door_mode), doorModeText(mode))
+                stringResource(R.string.detailed_status_view_door_mode), doorModeText(mode)
+            )
 
             DetailedStatusViewEntry(Icons.Filled.Info,
-                stringResource(R.string.detailed_status_view_door_sensor), doorSensorText(sensor))
+                stringResource(R.string.detailed_status_view_door_sensor), doorSensorText(sensor)
+            )
 
             DetailedStatusViewEntry(Icons.Filled.Info,
-                stringResource(R.string.detailed_status_view_lock_state), lockStateText(lock))
+                stringResource(R.string.detailed_status_view_lock_state), lockStateText(lock)
+            )
 
             DetailedStatusViewEntry(Icons.Filled.Info,
                 stringResource(R.string.detailed_status_view_server_version), serverVersion)
@@ -121,7 +133,8 @@ fun DetailedStatusView(
             )
 
             DetailedStatusViewEntry(Icons.Filled.Info,
-                stringResource(R.string.detailed_status_view_connection_type), connectionTypeText(connectionType))
+                stringResource(R.string.detailed_status_view_connection_type), connectionTypeText(connectionType)
+            )
 
             if (connectionError.isNotEmpty()) {
                 TextField(

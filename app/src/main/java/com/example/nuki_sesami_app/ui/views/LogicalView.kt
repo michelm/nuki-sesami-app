@@ -1,4 +1,4 @@
-package com.example.nuki_sesami_app
+package com.example.nuki_sesami_app.ui.views
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -38,6 +38,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.nuki_sesami_app.state.ConnectionType
+import com.example.nuki_sesami_app.state.DoorAction
+import com.example.nuki_sesami_app.state.DoorState
+import com.example.nuki_sesami_app.state.LockState
+import com.example.nuki_sesami_app.NukiSesamiClient
+import com.example.nuki_sesami_app.NukiSesamiClientSimulation
+import com.example.nuki_sesami_app.R
+import com.example.nuki_sesami_app.UserPreferences
+import com.example.nuki_sesami_app.ui.misc.doorActionText
+import com.example.nuki_sesami_app.ui.misc.doorStateText
+import com.example.nuki_sesami_app.ui.misc.lockStateText
+import com.example.nuki_sesami_app.ui.misc.connectionTypeText
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

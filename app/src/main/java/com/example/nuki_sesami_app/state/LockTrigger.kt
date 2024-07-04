@@ -1,4 +1,4 @@
-package com.example.nuki_sesami_app
+package com.example.nuki_sesami_app.state
 
 enum class LockTrigger(val value: Int) {
     SystemBluetooth(0),
@@ -17,7 +17,7 @@ enum class LockTrigger(val value: Int) {
 
         fun from(value: String): LockTrigger {
             val t = value.toIntOrNull()
-            return LockTrigger.from(t ?: 0)
+            return from(t ?: 0)
         }
     }
 }

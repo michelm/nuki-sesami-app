@@ -1,4 +1,4 @@
-package com.example.nuki_sesami_app
+package com.example.nuki_sesami_app.state
 
 enum class LockAction(val value: Int) {
     Unlock(1),      // Activate RTO
@@ -18,7 +18,7 @@ enum class LockAction(val value: Int) {
 
         fun from(value: String): LockAction {
             val t = value.toIntOrNull()
-            return LockAction.from(t ?: 0)
+            return from(t ?: 0)
         }
     }
 }

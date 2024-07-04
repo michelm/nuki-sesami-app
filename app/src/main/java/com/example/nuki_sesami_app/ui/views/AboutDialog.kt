@@ -1,4 +1,4 @@
-package com.example.nuki_sesami_app
+package com.example.nuki_sesami_app.ui.views
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.runtime.Composable
@@ -23,8 +23,12 @@ import androidx.compose.ui.platform.AndroidUriHandler
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import com.example.nuki_sesami_app.BuildConfig
+import com.example.nuki_sesami_app.ui.misc.LinkedAnnotatedString
+import com.example.nuki_sesami_app.R
 
 @Composable
 fun AboutDialogEntry(
@@ -104,4 +108,10 @@ fun AboutDialog(
             }
         }
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AboutDialogPreview() {
+    AboutDialog {}
 }

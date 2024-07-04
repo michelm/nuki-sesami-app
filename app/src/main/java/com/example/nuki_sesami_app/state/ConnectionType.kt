@@ -1,6 +1,4 @@
-package com.example.nuki_sesami_app
-
-import androidx.compose.runtime.Composable
+package com.example.nuki_sesami_app.state
 
 enum class ConnectionType(val value: Int) {
     MQTT(0),
@@ -13,15 +11,7 @@ enum class ConnectionType(val value: Int) {
 
         fun from(value: String): ConnectionType {
             val t = value.toIntOrNull()
-            return ConnectionType.from(t ?: 0)
+            return from(t ?: 0)
         }
-    }
-}
-
-@Composable
-fun connectionTypeText(connection: ConnectionType): String {
-    return when (connection) {
-        ConnectionType.MQTT -> "mqtt"
-        ConnectionType.Bluetooth -> "bluetooth"
     }
 }

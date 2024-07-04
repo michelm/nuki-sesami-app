@@ -1,4 +1,4 @@
-package com.example.nuki_sesami_app
+package com.example.nuki_sesami_app.state
 
 enum class DoorRequestState(val value: Int) {
     None(0),    // No request
@@ -13,7 +13,7 @@ enum class DoorRequestState(val value: Int) {
 
         fun from(value: String): DoorRequestState {
             val t = value.toIntOrNull()
-            return DoorRequestState.from(t ?: 0)
+            return from(t ?: 0)
         }
     }
 }
