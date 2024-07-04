@@ -66,12 +66,15 @@
     <string name="preferences_key_switch_openhold">switch_openhold</string>
     <string name="preferences_key_simulation_mode">simulation</string>
     <string name="preferences_key_prefer_bluetooth">prefer_bluetooth</string>
-    <string name="detailed_status_view_entry_door_action">door action</string>
-    <string name="detailed_status_view_entry_door_state">door state</string>
-    <string name="detailed_status_view_entry_door_mode">door mode</string>
-    <string name="detailed_status_view_entry_door_sensor">door sensor</string>
-    <string name="detailed_status_view_entry_lock_state">lock state</string>
-    <string name="detailed_status_view_entry_server_version">server version</string>
+    <string name="detailed_status_view_door_action">door action</string>
+    <string name="detailed_status_view_door_state">door state</string>
+    <string name="detailed_status_view_door_mode">door mode</string>
+    <string name="detailed_status_view_door_sensor">door sensor</string>
+    <string name="detailed_status_view_lock_state">lock state</string>
+    <string name="detailed_status_view_server_version">server version</string>
+    <string name="detailed_status_view_connection_type">connection type</string>
+    <string name="detailed_status_view_connection_error">connection error</string>
+    <string name="detailed_status_view_connected">connected</string>
     <string name="about_view_entry_caption_application">application</string>
     <string name="about_view_entry_caption_version">version</string>
     <string name="about_view_entry_caption_build_type">build type</string>
@@ -80,5 +83,5 @@
         Open(hold) and close a door controlled by the Nuki Sesami service.
         \nSee nuki-sesami-app on github for a detailed description.
     </string>
-    <string name="snackbar_message_settings_updated">Settings updated</string>
+    <string name="snackbar_message_settings_updated">Settings updated, restart required</string>
 </resources>

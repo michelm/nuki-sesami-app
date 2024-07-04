@@ -121,9 +121,6 @@ fun SettingsView(
     var preferBluetooth by remember { mutableStateOf (preferences.load(
         R.string.preferences_key_prefer_bluetooth, false)
     ) }
-    var preferBluetoothText by remember { mutableStateOf(
-        if (preferBluetooth) "bluetooth" else "mqtt"
-    ) }
 
     var validMqttPort by remember { mutableStateOf (true) }
     var validBluetoothAddress by remember { mutableStateOf (true) }
@@ -190,11 +187,10 @@ fun SettingsView(
                         onCheckedChange = {
                             preferBluetooth = it
                             preferences.save(R.string.preferences_key_prefer_bluetooth, it)
-                            preferBluetoothText = if (preferBluetooth) "bluetooth" else "mqtt"
                         }
                     )
                     Text(
-                        preferBluetoothText,
+                        "mqtt | bluetooth",
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold
                     )

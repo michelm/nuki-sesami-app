@@ -31,6 +31,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -43,7 +44,8 @@ import androidx.compose.ui.unit.sp
 fun LogicalViewDetailsEntry(
     icon: ImageVector,
     text: String,
-    tooltip: Int
+    tooltip: Int,
+    tint: Color? = null
 ) {
     TooltipBox(
         positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
@@ -58,10 +60,11 @@ fun LogicalViewDetailsEntry(
                 onClick = { /* No action */ },
                 enabled = false
             ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = "Localized Description"
-                )
+                if (tint != null) {
+                    Icon(imageVector = icon, contentDescription = null, tint = tint)
+                } else {
+                    Icon(imageVector = icon, contentDescription = null)
+                }
             }
             Text(text)
         }
@@ -77,22 +80,19 @@ fun LogicalView(
     var action by remember { mutableStateOf(sesami.doorAction.value) }
     var door by remember { mutableStateOf(sesami.doorState.value) }
     var lock by remember { mutableStateOf(sesami.lockState.value) }
-    var mqtt by remember { mutableStateOf(sesami.mqttConnected.value) }
-    var bluetooth by remember { mutableStateOf(sesami.bluetoothConnected.value) }
-    var connected by remember { mutableStateOf(mqtt || bluetooth) }
+    var connected by remember { mutableStateOf(sesami.connected.value) }
+    var connectionType by remember { mutableStateOf(sesami.connectionType.value) }
     var hold by remember { mutableStateOf(preferences.load(
         R.string.preferences_key_switch_openhold, true)) }
 
     sesami.doorAction.subscribe { value: DoorAction -> action = value }
     sesami.doorState.subscribe { value: DoorState -> door = value }
     sesami.lockState.subscribe { value: LockState -> lock = value }
-    sesami.mqttConnected.subscribe { value: Boolean ->
-        mqtt = value
-        connected = mqtt || bluetooth
+    sesami.connected.subscribe { value: Boolean ->
+        connected = value
     }
-    sesami.bluetoothConnected.subscribe { value: Boolean ->
-        bluetooth = value
-        connected = mqtt || bluetooth
+    sesami.connectionType.subscribe { value: ConnectionType ->
+        connectionType = value
     }
 
     Column (
@@ -165,8 +165,9 @@ fun LogicalView(
 
                 LogicalViewDetailsEntry(
                     if (connected) Icons.Filled.CheckCircle else Icons.Filled.Warning,
-                    if (mqtt) "mqtt" else { if (bluetooth) "bluetooth" else "---" },
-                    R.string.tooltip_sesami_connection_state
+                    connectionTypeText(connectionType),
+                    R.string.tooltip_sesami_connection_state,
+                    tint = if (connected) null else MaterialTheme.colorScheme.error
                 )
             }
         }

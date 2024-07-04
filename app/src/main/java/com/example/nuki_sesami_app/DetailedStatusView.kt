@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -20,6 +21,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -37,7 +39,8 @@ fun connectionStateText(connected: Boolean): String {
 fun DetailedStatusViewEntry(
     icon: ImageVector,
     caption: String,
-    state: String
+    state: String,
+    tint: Color? = null
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically
@@ -46,10 +49,11 @@ fun DetailedStatusViewEntry(
             onClick = { /* No action */ },
             enabled = false
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = "Localized Description"
-            )
+            if (tint != null) {
+                Icon(imageVector = icon, contentDescription = null, tint = tint)
+            } else {
+                Icon(imageVector = icon, contentDescription = null)
+            }
         }
         Text("$caption: ")
         Text(state, fontWeight = FontWeight.Bold)
@@ -67,9 +71,9 @@ fun DetailedStatusView(
     var sensor by remember { mutableStateOf(sesami.doorSensor.value) }
     var lock by remember { mutableStateOf(sesami.lockState.value) }
     var serverVersion by remember { mutableStateOf(sesami.version.value) }
-    var mqtt by remember { mutableStateOf(sesami.mqttConnected.value) }
-    var mqttError by remember { mutableStateOf("") }
-    var bluetooth by remember { mutableStateOf(false) }
+    var connected by remember { mutableStateOf(sesami.connected.value) }
+    var connectionType by remember { mutableStateOf(sesami.connectionType.value) }
+    var connectionError by remember { mutableStateOf(sesami.connectionError.value) }
 
     sesami.doorAction.subscribe { value: DoorAction -> action = value }
     sesami.doorState.subscribe { value: DoorState -> door = value }
@@ -77,9 +81,9 @@ fun DetailedStatusView(
     sesami.doorSensor.subscribe { value: DoorSensorState -> sensor = value }
     sesami.lockState.subscribe { value: LockState -> lock = value }
     sesami.version.subscribe { value: String -> serverVersion = value }
-    sesami.mqttConnected.subscribe { value: Boolean -> mqtt = value }
-    sesami.mqttError.subscribe { value: String -> mqttError = value }
-    sesami.bluetoothConnected.subscribe { value: Boolean -> bluetooth = value }
+    sesami.connectionType.subscribe { value: ConnectionType -> connectionType = value }
+    sesami.connectionError.subscribe { value: String -> connectionError = value }
+    sesami.connected.subscribe { value: Boolean -> connected = value }
 
     Column(
         modifier = modifier.fillMaxSize(),
@@ -92,40 +96,38 @@ fun DetailedStatusView(
         ) {
             DetailedStatusViewEntry(
                 Icons.Filled.CheckCircle,
-                stringResource(R.string.detailed_status_view_entry_door_action), doorActionText(action))
+                stringResource(R.string.detailed_status_view_door_action), doorActionText(action))
 
             DetailedStatusViewEntry(Icons.Filled.Home,
-                stringResource(R.string.detailed_status_view_entry_door_state), doorStateText(door))
+                stringResource(R.string.detailed_status_view_door_state), doorStateText(door))
 
             DetailedStatusViewEntry(Icons.Filled.Info,
-                stringResource(R.string.detailed_status_view_entry_door_mode), doorModeText(mode))
+                stringResource(R.string.detailed_status_view_door_mode), doorModeText(mode))
 
             DetailedStatusViewEntry(Icons.Filled.Info,
-                stringResource(R.string.detailed_status_view_entry_door_sensor), doorSensorText(sensor))
+                stringResource(R.string.detailed_status_view_door_sensor), doorSensorText(sensor))
 
             DetailedStatusViewEntry(Icons.Filled.Info,
-                stringResource(R.string.detailed_status_view_entry_lock_state), lockStateText(lock))
+                stringResource(R.string.detailed_status_view_lock_state), lockStateText(lock))
 
             DetailedStatusViewEntry(Icons.Filled.Info,
-                stringResource(R.string.detailed_status_view_entry_server_version), serverVersion)
+                stringResource(R.string.detailed_status_view_server_version), serverVersion)
 
             DetailedStatusViewEntry(
-                if (mqtt) Icons.Filled.CheckCircle else Icons.Filled.Warning,
-                "mqtt",
-                connectionStateText(mqtt)
+                icon = if (connected) Icons.Filled.CheckCircle else Icons.Filled.Warning,
+                caption = stringResource(R.string.detailed_status_view_connected),
+                state = connected.toString(),
+                tint = if (connected) null else MaterialTheme.colorScheme.error
             )
 
-            DetailedStatusViewEntry(
-                if (bluetooth) Icons.Filled.CheckCircle else Icons.Filled.Warning,
-                "bluetooth",
-                connectionStateText(bluetooth)
-            )
+            DetailedStatusViewEntry(Icons.Filled.Info,
+                stringResource(R.string.detailed_status_view_connection_type), connectionTypeText(connectionType))
 
-            if (mqttError.isNotEmpty()) {
+            if (connectionError.isNotEmpty()) {
                 TextField(
-                    value = mqttError,
+                    value = connectionError,
                     onValueChange = {},
-                    label = { Text("MQTT error") },
+                    label = { Text(stringResource(R.string.detailed_status_view_connection_error)) },
                     singleLine = false
                 )
             }
