@@ -210,9 +210,18 @@ fun SettingsView(
                         }
                     )
                     Text(
-                        "mqtt | bluetooth",
+                        "mqtt",
                         color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = if (preferBluetooth) FontWeight.Normal else FontWeight.Bold
+                    )
+                    Text(
+                        " | ",
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                    Text(
+                        "bluetooth",
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = if (preferBluetooth) FontWeight.Bold else FontWeight.Normal
                     )
                 }
                 if (preferBluetooth) {
