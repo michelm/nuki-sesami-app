@@ -31,19 +31,19 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
-import com.example.nuki_sesami_app.NUKI_SESAMI_DEFAULT_BLUETOOTH_ADDRESS
-import com.example.nuki_sesami_app.NUKI_SESAMI_DEFAULT_BLUETOOTH_CHANNEL
-import com.example.nuki_sesami_app.NUKI_SESAMI_DEFAULT_DEVICE_ID
-import com.example.nuki_sesami_app.NUKI_SESAMI_DEFAULT_MQTT_HOSTNAME
-import com.example.nuki_sesami_app.NUKI_SESAMI_DEFAULT_MQTT_PASSWORD
-import com.example.nuki_sesami_app.NUKI_SESAMI_DEFAULT_MQTT_PORT
-import com.example.nuki_sesami_app.NUKI_SESAMI_DEFAULT_MQTT_USERNAME
-import com.example.nuki_sesami_app.NUKI_SESAMI_MAX_BLUETOOTH_CHANNEL
-import com.example.nuki_sesami_app.NUKI_SESAMI_MAX_MQTT_PORT
-import com.example.nuki_sesami_app.NUKI_SESAMI_MIN_BLUETOOTH_CHANNEL
-import com.example.nuki_sesami_app.NUKI_SESAMI_MIN_MQTT_PORT
+import com.example.nuki_sesami_app.base.NUKI_SESAMI_DEFAULT_BLUETOOTH_ADDRESS
+import com.example.nuki_sesami_app.base.NUKI_SESAMI_DEFAULT_BLUETOOTH_CHANNEL
+import com.example.nuki_sesami_app.base.NUKI_SESAMI_DEFAULT_DEVICE_ID
+import com.example.nuki_sesami_app.base.NUKI_SESAMI_DEFAULT_MQTT_HOSTNAME
+import com.example.nuki_sesami_app.base.NUKI_SESAMI_DEFAULT_MQTT_PASSWORD
+import com.example.nuki_sesami_app.base.NUKI_SESAMI_DEFAULT_MQTT_PORT
+import com.example.nuki_sesami_app.base.NUKI_SESAMI_DEFAULT_MQTT_USERNAME
+import com.example.nuki_sesami_app.base.NUKI_SESAMI_MAX_BLUETOOTH_CHANNEL
+import com.example.nuki_sesami_app.base.NUKI_SESAMI_MAX_MQTT_PORT
+import com.example.nuki_sesami_app.base.NUKI_SESAMI_MIN_BLUETOOTH_CHANNEL
+import com.example.nuki_sesami_app.base.NUKI_SESAMI_MIN_MQTT_PORT
 import com.example.nuki_sesami_app.R
-import com.example.nuki_sesami_app.UserPreferences
+import com.example.nuki_sesami_app.base.UserPreferences
 
 fun isValidNukiDeviceIDArg(arg: String): Boolean {
     try {

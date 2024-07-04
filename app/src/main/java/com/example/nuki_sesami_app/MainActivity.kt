@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import com.example.nuki_sesami_app.base.UserPreferences
 import com.example.nuki_sesami_app.ui.theme.NukiSesamiAppTheme
 import com.example.nuki_sesami_app.ui.views.MainScreen
 
@@ -21,7 +22,7 @@ class MainActivity : ComponentActivity() {
             preferences = UserPreferences(context)
 
             val simulation = preferences.load(R.string.preferences_key_simulation_mode, false)
-            sesami = if (simulation) NukiSesamiClientSimulation() else NukiSesamiClient()
+            sesami = if (simulation) NukiSesamiSimulation() else NukiSesamiClient()
 
             NukiSesamiAppTheme {
                 MainScreen(

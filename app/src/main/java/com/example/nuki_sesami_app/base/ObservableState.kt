@@ -1,4 +1,4 @@
-package com.example.nuki_sesami_app
+package com.example.nuki_sesami_app.base
 
 class ObservableState<ValueType>(state: ValueType) {
     private var _state: ValueType = state

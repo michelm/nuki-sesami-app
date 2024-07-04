@@ -40,9 +40,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat.getString
 import com.example.nuki_sesami_app.R
-import com.example.nuki_sesami_app.UserPreferences
+import com.example.nuki_sesami_app.base.UserPreferences
 import com.example.nuki_sesami_app.NukiSesamiClient
-import com.example.nuki_sesami_app.NukiSesamiClientSimulation
+import com.example.nuki_sesami_app.NukiSesamiSimulation
 import com.example.nuki_sesami_app.state.ViewSelected
 import com.example.nuki_sesami_app.ui.theme.NukiSesamiAppTheme
 
@@ -240,7 +240,7 @@ fun MainScreenPreview() {
     NukiSesamiAppTheme {
         MainScreen(
             preferences = UserPreferences(),
-            sesami = NukiSesamiClientSimulation(),
+            sesami = NukiSesamiSimulation(),
             modifier = Modifier
         )
     }

@@ -33,7 +33,7 @@ import com.example.nuki_sesami_app.state.DoorSensorState
 import com.example.nuki_sesami_app.state.DoorState
 import com.example.nuki_sesami_app.state.LockState
 import com.example.nuki_sesami_app.NukiSesamiClient
-import com.example.nuki_sesami_app.NukiSesamiClientSimulation
+import com.example.nuki_sesami_app.NukiSesamiSimulation
 import com.example.nuki_sesami_app.R
 import com.example.nuki_sesami_app.ui.misc.doorActionText
 import com.example.nuki_sesami_app.ui.misc.doorModeText
@@ -153,6 +153,6 @@ fun DetailedStatusView(
 fun DetailedStatusViewPreview() {
     DetailedStatusView(
         modifier = Modifier,
-        sesami = NukiSesamiClientSimulation()
+        sesami = NukiSesamiSimulation()
     )
 }

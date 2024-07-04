@@ -1,8 +1,9 @@
-package com.example.nuki_sesami_app
+package com.example.nuki_sesami_app.base
 
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.ContextCompat.getString
+import com.example.nuki_sesami_app.R
 
 class UserPreferences(
     private val context: Context? = null
