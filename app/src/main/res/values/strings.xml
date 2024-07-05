@@ -83,5 +83,5 @@
         Open(hold) and close a door controlled by the Nuki Sesami service.
         \nSee nuki-sesami-app on github for a detailed description.
     </string>
-    <string name="snackbar_message_settings_updated">Settings updated, restart required</string>
+    <string name="snackbar_message_settings_updated">Restart required!</string>
 </resources>

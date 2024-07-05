@@ -224,6 +224,24 @@ fun SettingsView(
                         fontWeight = if (preferBluetooth) FontWeight.Bold else FontWeight.Normal
                     )
                 }
+
+                TextField(
+                    value = nukiDeviceID,
+                    onValueChange = {
+                        nukiDeviceID = it
+                        validNukiDeviceID = isValidNukiDeviceIDArg(it)
+                        if (validNukiDeviceID) {
+                            preferences.save(
+                                R.string.preferences_key_nuki_device_id,
+                                nukiDeviceID
+                            )
+                        }
+                    },
+                    label = { Text(stringResource(R.string.settings_label_nuki_device_id)) },
+                    singleLine = true,
+                    isError = !validNukiDeviceID
+                )
+
                 if (preferBluetooth) {
                     TextField(
                         value = bluetoothAddress,
@@ -261,23 +279,6 @@ fun SettingsView(
                         isError = !validBluetoothChannel
                     )
                 } else {
-                    TextField(
-                        value = nukiDeviceID,
-                        onValueChange = {
-                            nukiDeviceID = it
-                            validNukiDeviceID = isValidNukiDeviceIDArg(it)
-                            if (validNukiDeviceID) {
-                                preferences.save(
-                                    R.string.preferences_key_nuki_device_id,
-                                    nukiDeviceID
-                                )
-                            }
-                        },
-                        label = { Text(stringResource(R.string.settings_label_nuki_device_id)) },
-                        singleLine = true,
-                        isError = !validNukiDeviceID
-                    )
-
                     TextField(
                         value = mqttHostname,
                         onValueChange = {

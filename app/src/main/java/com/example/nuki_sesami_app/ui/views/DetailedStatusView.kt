@@ -4,11 +4,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -26,6 +28,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.example.nuki_sesami_app.state.ConnectionType
 import com.example.nuki_sesami_app.state.DoorAction
 import com.example.nuki_sesami_app.state.DoorMode
@@ -93,57 +96,63 @@ fun DetailedStatusView(
     sesami.connected.subscribe { value: Boolean -> connected = value }
 
     Column(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier
+            .fillMaxSize()
+            .padding(20.dp),
         verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.Start
     ) {
-        Column(
-            modifier = modifier,
-            horizontalAlignment = Alignment.Start
+        DetailedStatusViewEntry(
+            Icons.Filled.CheckCircle,
+            stringResource(R.string.detailed_status_view_door_action), doorActionText(action)
+        )
+
+        DetailedStatusViewEntry(Icons.Filled.Home,
+            stringResource(R.string.detailed_status_view_door_state), doorStateText(door)
+        )
+
+        DetailedStatusViewEntry(Icons.Filled.Info,
+            stringResource(R.string.detailed_status_view_door_mode), doorModeText(mode)
+        )
+
+        DetailedStatusViewEntry(Icons.Filled.Info,
+            stringResource(R.string.detailed_status_view_door_sensor), doorSensorText(sensor)
+        )
+
+        DetailedStatusViewEntry(Icons.Filled.Info,
+            stringResource(R.string.detailed_status_view_lock_state), lockStateText(lock)
+        )
+
+        DetailedStatusViewEntry(Icons.Filled.Info,
+            stringResource(R.string.detailed_status_view_server_version), serverVersion)
+
+        DetailedStatusViewEntry(
+            icon = if (connected) Icons.Filled.CheckCircle else Icons.Filled.Warning,
+            caption = stringResource(R.string.detailed_status_view_connected),
+            state = connected.toString(),
+            tint = if (connected) null else MaterialTheme.colorScheme.error
+        )
+
+        DetailedStatusViewEntry(Icons.Filled.Info,
+            stringResource(R.string.detailed_status_view_connection_type), connectionTypeText(connectionType)
+        )
+
+        HorizontalDivider(
+            thickness = 2.dp,
+            modifier = Modifier.padding(5.dp)
+        )
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            DetailedStatusViewEntry(
-                Icons.Filled.CheckCircle,
-                stringResource(R.string.detailed_status_view_door_action), doorActionText(action)
+            TextField(
+                modifier = Modifier.padding(start = 5.dp),
+                value = if (connectionError.isNotEmpty()) connectionError else "<none>",
+                onValueChange = {},
+                label = { Text(stringResource(R.string.detailed_status_view_connection_error)) },
+                singleLine = false,
+                maxLines = 10
             )
-
-            DetailedStatusViewEntry(Icons.Filled.Home,
-                stringResource(R.string.detailed_status_view_door_state), doorStateText(door)
-            )
-
-            DetailedStatusViewEntry(Icons.Filled.Info,
-                stringResource(R.string.detailed_status_view_door_mode), doorModeText(mode)
-            )
-
-            DetailedStatusViewEntry(Icons.Filled.Info,
-                stringResource(R.string.detailed_status_view_door_sensor), doorSensorText(sensor)
-            )
-
-            DetailedStatusViewEntry(Icons.Filled.Info,
-                stringResource(R.string.detailed_status_view_lock_state), lockStateText(lock)
-            )
-
-            DetailedStatusViewEntry(Icons.Filled.Info,
-                stringResource(R.string.detailed_status_view_server_version), serverVersion)
-
-            DetailedStatusViewEntry(
-                icon = if (connected) Icons.Filled.CheckCircle else Icons.Filled.Warning,
-                caption = stringResource(R.string.detailed_status_view_connected),
-                state = connected.toString(),
-                tint = if (connected) null else MaterialTheme.colorScheme.error
-            )
-
-            DetailedStatusViewEntry(Icons.Filled.Info,
-                stringResource(R.string.detailed_status_view_connection_type), connectionTypeText(connectionType)
-            )
-
-            if (connectionError.isNotEmpty()) {
-                TextField(
-                    value = connectionError,
-                    onValueChange = {},
-                    label = { Text(stringResource(R.string.detailed_status_view_connection_error)) },
-                    singleLine = false
-                )
-            }
         }
     }
 }

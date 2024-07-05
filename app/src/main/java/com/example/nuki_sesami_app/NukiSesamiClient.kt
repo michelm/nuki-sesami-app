@@ -2,6 +2,7 @@ package com.example.nuki_sesami_app
 
 import android.app.Activity
 import android.content.Context
+import android.util.Log
 import com.example.nuki_sesami_app.base.ObservableState
 import com.example.nuki_sesami_app.base.UserPreferences
 import com.example.nuki_sesami_app.base.NUKI_SESAMI_DEFAULT_DEVICE_ID
@@ -11,6 +12,7 @@ import com.example.nuki_sesami_app.base.NUKI_SESAMI_DEFAULT_MQTT_USERNAME
 import com.example.nuki_sesami_app.base.NUKI_SESAMI_DEFAULT_MQTT_PASSWORD
 import com.example.nuki_sesami_app.base.NUKI_SESAMI_DEFAULT_BLUETOOTH_ADDRESS
 import com.example.nuki_sesami_app.base.NUKI_SESAMI_DEFAULT_BLUETOOTH_CHANNEL
+import com.example.nuki_sesami_app.errors.BluetoothServiceError
 import com.example.nuki_sesami_app.state.ConnectionType
 import com.example.nuki_sesami_app.state.DoorAction
 import com.example.nuki_sesami_app.state.DoorMode
@@ -56,8 +58,9 @@ open class NukiSesamiClient (
         protected set
 
     private var mqtt: MqttClient? = null
+    private var bluetooth: BluetoothService? = null
 
-    private fun getNukiSesamiMqtt(context: Context): MqttClient {
+    private fun getMqttClient(context: Context): MqttClient {
         val mqtt = MqttClient(
             mqttHostname,
             mqttPort,
@@ -105,15 +108,71 @@ open class NukiSesamiClient (
         return mqtt
     }
 
+    private fun getBluetoothService(context: Context): BluetoothService {
+        val bluetooth = BluetoothService(
+            context = context,
+            nukiDeviceID = nukiDeviceID,
+            address = bluetoothAddress,
+            channel = bluetoothChannel,
+        )
+
+        bluetooth.connected.subscribe { value ->
+            (context as Activity).runOnUiThread {
+                connected.value = value
+            }
+        }
+
+        bluetooth.error.subscribe { value ->
+            (context as Activity).runOnUiThread {
+                connectionError.value = value
+            }
+        }
+
+        bluetooth.subscribe { topic, message ->
+            (context as Activity).runOnUiThread {
+                when (topic) {
+                    "sesami/${nukiDeviceID}/version" -> version.value = message
+                    "sesami/${nukiDeviceID}/state" -> {
+                        doorState.value = DoorState.from(message)
+                        doorAction.value = when (doorState.value) {
+                            DoorState.Closed -> DoorAction.Open
+                            DoorState.OpenHold -> DoorAction.Close
+                            DoorState.Opened -> DoorAction.None
+                            DoorState.Unknown -> DoorAction.None
+                        }
+                    }
+
+                    "sesami/${nukiDeviceID}/mode" -> doorMode.value = DoorMode.from(message)
+                    "nuki/${nukiDeviceID}/doorsensorState" -> {
+                        doorSensor.value = DoorSensorState.from(message)
+                    }
+
+                    "nuki/${nukiDeviceID}/state" -> lockState.value = LockState.from(message)
+                }
+            }
+        }
+
+        return bluetooth
+    }
+
     open fun simulated(): Boolean { return false }
 
     open fun activate(context: Context) {
         if (connectionType.value == ConnectionType.MQTT) {
             if (mqtt == null) {
-                mqtt = getNukiSesamiMqtt(context)
+                mqtt = getMqttClient(context)
             }
         } else { // Bluetooth
-            // TODO: implement me
+            if (bluetooth == null) {
+                try {
+                    bluetooth = getBluetoothService(context)
+                } catch (e: BluetoothServiceError) {
+                    Log.e("bluetooth", "activate failed", e)
+                    bluetooth = null
+                    connected.value = false
+                    connectionError.value = e.toString()
+                }
+            }
         }
     }
 
@@ -122,7 +181,8 @@ open class NukiSesamiClient (
             mqtt!!.close()
             mqtt = null
         } else { // Bluetooth
-            // TODO: implement me
+            bluetooth!!.close()
+            bluetooth = null
         }
     }
 
@@ -155,7 +215,9 @@ open class NukiSesamiClient (
                 mqtt!!.publish("sesami/${nukiDeviceID}/request/state", request.value.toString())
             }
         } else { // Bluetooth
-            // TODO: implement me
+            if (bluetooth!!.connected.value) {
+                bluetooth!!.publish("sesami/${nukiDeviceID}/request/state", request.value.toString())
+            }
         }
     }
 
@@ -167,7 +229,9 @@ open class NukiSesamiClient (
                 mqtt!!.publish("sesami/${nukiDeviceID}/request/state", request.value.toString())
             }
         } else { // Bluetooth
-            // TODO: implement me
+            if (bluetooth!!.connected.value) {
+                bluetooth!!.publish("sesami/${nukiDeviceID}/request/state", request.value.toString())
+            }
         }
     }
 }
