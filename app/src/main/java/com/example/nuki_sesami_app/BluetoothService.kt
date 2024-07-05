@@ -10,6 +10,8 @@ import android.util.Log
 import androidx.core.app.ActivityCompat
 import com.example.nuki_sesami_app.base.ObservableState
 import com.example.nuki_sesami_app.errors.BluetoothServiceError
+import com.example.nuki_sesami_app.jsonrpc.DoorRequestMessage
+import com.example.nuki_sesami_app.jsonrpc.DoorRequestParams
 import com.example.nuki_sesami_app.jsonrpc.StatusMessage
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
@@ -80,8 +82,6 @@ class BluetoothService(
             period = 1000,
             action = {
                 connected.value = socket.isConnected
-                Log.d("bluetooth", "tick(connected=${connected.value})")
-
                 try {
                     receive(socket.inputStream)
                 } catch(e: IOException) {
@@ -94,7 +94,6 @@ class BluetoothService(
 
     private fun receive(input: InputStream) {
         var remaining = input.available()
-        Log.d("bluetooth", "receive(remaining=$remaining)")
 
         while (remaining >= 1) {
             val char: Char = input.read().toChar()
@@ -132,7 +131,6 @@ class BluetoothService(
             Log.e("bluetooth", "failed to process status message", e)
         }
 
-        error.value = data
         return ""
     }
 
@@ -167,11 +165,8 @@ class BluetoothService(
             return
         }
 
-        val msg = """{
-            "jsonrpc": "2.0", +
-            "method": "set", 
-            "params": { "door_request_state": $value } 
-        }""".trimIndent()
+        val request = DoorRequestMessage(params=DoorRequestParams(state=value.toInt()))
+        val msg = Gson().toJson(request) + "\n"
 
         Log.d("bluetooth", "send($msg)")
 
