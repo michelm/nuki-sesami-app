@@ -147,7 +147,7 @@ fun DetailedStatusView(
         ) {
             TextField(
                 modifier = Modifier.padding(start = 5.dp),
-                value = if (connectionError.isNotEmpty()) connectionError else "<none>",
+                value = connectionError.ifEmpty { "<none>" },
                 onValueChange = {},
                 label = { Text(stringResource(R.string.detailed_status_view_connection_error)) },
                 singleLine = false,
