@@ -75,6 +75,8 @@
     <string name="detailed_status_view_connection_type">connection type</string>
     <string name="detailed_status_view_connection_error">connection error</string>
     <string name="detailed_status_view_connected">connected</string>
+    <string name="detailed_status_view_simulated">demo</string>
+    <string name="detailed_status_view_activated">activated</string>
     <string name="about_view_entry_caption_application">application</string>
     <string name="about_view_entry_caption_version">version</string>
     <string name="about_view_entry_caption_build_type">build type</string>

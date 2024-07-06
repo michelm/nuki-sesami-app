@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -82,6 +83,8 @@ fun DetailedStatusView(
     var lock by remember { mutableStateOf(sesami.lockState.value) }
     var serverVersion by remember { mutableStateOf(sesami.version.value) }
     var connected by remember { mutableStateOf(sesami.connected.value) }
+    var simulated by remember { mutableStateOf(sesami.simulated.value) }
+    var activated by remember { mutableStateOf(sesami.activated.value) }
     var connectionType by remember { mutableStateOf(sesami.connectionType.value) }
     var connectionError by remember { mutableStateOf(sesami.connectionError.value) }
 
@@ -94,6 +97,8 @@ fun DetailedStatusView(
     sesami.connectionType.subscribe { value: ConnectionType -> connectionType = value }
     sesami.connectionError.subscribe { value: String -> connectionError = value }
     sesami.connected.subscribe { value: Boolean -> connected = value }
+    sesami.simulated.subscribe { value: Boolean -> simulated = value }
+    sesami.activated.subscribe { value: Boolean -> activated = value }
 
     Column(
         modifier = modifier
@@ -102,8 +107,7 @@ fun DetailedStatusView(
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.Start
     ) {
-        DetailedStatusViewEntry(
-            Icons.Filled.CheckCircle,
+        DetailedStatusViewEntry(Icons.Filled.CheckCircle,
             stringResource(R.string.detailed_status_view_door_action), doorActionText(action)
         )
 
@@ -123,8 +127,16 @@ fun DetailedStatusView(
             stringResource(R.string.detailed_status_view_lock_state), lockStateText(lock)
         )
 
+        DetailedStatusViewEntry(Icons.Filled.Star,
+            stringResource(R.string.detailed_status_view_simulated), simulated.toString()
+        )
+
         DetailedStatusViewEntry(Icons.Filled.Info,
             stringResource(R.string.detailed_status_view_server_version), serverVersion)
+
+        DetailedStatusViewEntry(Icons.Filled.Info,
+            stringResource(R.string.detailed_status_view_activated), activated.toString()
+        )
 
         DetailedStatusViewEntry(
             icon = if (connected) Icons.Filled.CheckCircle else Icons.Filled.Warning,
