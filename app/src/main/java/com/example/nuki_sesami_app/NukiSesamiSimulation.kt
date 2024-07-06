@@ -17,6 +17,7 @@ class NukiSesamiSimulation: NukiSesamiClient(
     private var simulationTimer: Timer? = null
 
     init {
+        simulated.value = true
         doorMode.value = DoorMode.OpenClose
         doorState.value = DoorState.Closed
         doorSensor.value = DoorSensorState.DoorClosed
@@ -24,8 +25,6 @@ class NukiSesamiSimulation: NukiSesamiClient(
         lockState.value = LockState.Unlocked
         version.value = "1.2.3"
     }
-
-    override fun simulated(): Boolean { return true }
 
     override fun openDoor(hold: Boolean) {
         doorMode.value = if (hold) DoorMode.OpenHold else DoorMode.OpenClose
@@ -45,11 +44,11 @@ class NukiSesamiSimulation: NukiSesamiClient(
 
     // Simulate start connection to MQTT / Bluetooth
     override fun activate(context: Context) {
-        if (this.simulationTimer != null) {
+        if (activated.value) {
             return
         }
 
-        this.simulationTimer = timer(
+        simulationTimer = timer(
             name = "NukiSesamiSimulationTimer",
             daemon = false,
             initialDelay = 0,
@@ -65,13 +64,15 @@ class NukiSesamiSimulation: NukiSesamiClient(
                 connectionType.value = ConnectionType.from(Random.nextInt(0,2))
             }
         )
+
+        activated.value = true
     }
 
     // Simulate terminate connection with MQTT / Bluetooth
     override fun deactivate() {
-        this.simulationTimer?.cancel()
-        this.simulationTimer?.purge()
-        this.simulationTimer = null
-        this.lockState.value = LockState.Undefined
+        simulationTimer?.cancel()
+        simulationTimer?.purge()
+        simulationTimer = null
+        super.deactivate()
     }
 }

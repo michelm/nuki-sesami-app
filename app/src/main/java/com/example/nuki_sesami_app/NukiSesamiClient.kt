@@ -48,6 +48,12 @@ open class NukiSesamiClient (
     var version = ObservableState("0.0.0")
         protected set
 
+    var activated = ObservableState(false)
+        protected set
+
+    var simulated = ObservableState(false)
+        protected set
+
     var connectionType = ObservableState(ConnectionType.MQTT)
         protected set
 
@@ -155,9 +161,11 @@ open class NukiSesamiClient (
         return bluetooth
     }
 
-    open fun simulated(): Boolean { return false }
-
     open fun activate(context: Context) {
+        if (activated.value) {
+            return
+        }
+
         if (connectionType.value == ConnectionType.MQTT) {
             if (mqtt == null) {
                 mqtt = getMqttClient(context)
@@ -174,9 +182,15 @@ open class NukiSesamiClient (
                 }
             }
         }
+
+        activated.value = true
     }
 
     open fun deactivate() {
+        if (!activated.value) {
+            return
+        }
+
         if (connectionType.value == ConnectionType.MQTT) {
             mqtt!!.close()
             mqtt = null
@@ -184,6 +198,15 @@ open class NukiSesamiClient (
             bluetooth!!.close()
             bluetooth = null
         }
+
+        doorState.value = DoorState.Unknown
+        doorMode.value = DoorMode.Unknown
+        doorAction.value = DoorAction.None
+        doorSensor.value = DoorSensorState.Unknown
+        lockState.value = LockState.Undefined
+        version.value = "0.0.0"
+        connected.value = false
+        activated.value = false
     }
 
     fun configure(preferences: UserPreferences) {
@@ -208,6 +231,10 @@ open class NukiSesamiClient (
     }
 
     open fun openDoor(hold: Boolean) {
+        if (!activated.value) {
+            return
+        }
+
         val request = if (hold) DoorRequestState.OpenHold else DoorRequestState.Open
 
         if (connectionType.value == ConnectionType.MQTT) {
@@ -222,6 +249,10 @@ open class NukiSesamiClient (
     }
 
     open fun closeDoor() {
+        if (!activated.value) {
+            return
+        }
+
         val request = DoorRequestState.Close
 
         if (connectionType.value == ConnectionType.MQTT) {
