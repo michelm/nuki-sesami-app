@@ -1,7 +1,6 @@
 package com.example.nuki_sesami_app.ui.views
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -9,12 +8,11 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.DateRange
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -24,27 +22,66 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Snackbar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat.getString
 import com.example.nuki_sesami_app.R
 import com.example.nuki_sesami_app.base.UserPreferences
 import com.example.nuki_sesami_app.NukiSesamiClient
 import com.example.nuki_sesami_app.NukiSesamiSimulation
 import com.example.nuki_sesami_app.state.ViewSelected
+import com.example.nuki_sesami_app.ui.misc.RequestAppPermissions
 import com.example.nuki_sesami_app.ui.theme.NukiSesamiAppTheme
+
+@Composable
+fun TopAppBarTitle(
+    appBarTitleRID: Int
+) {
+    Text(
+        text = stringResource(appBarTitleRID),
+        maxLines = 1,
+        fontWeight = FontWeight.Bold,
+        overflow = TextOverflow.Ellipsis
+    )
+}
+
+@Composable
+fun TopAppBarNavigationIcon(
+    onClick: () -> Unit
+) {
+    IconButton(onClick = onClick) {
+        Icon(
+            imageVector = Icons.Filled.Menu,
+            contentDescription = "Localized description"
+        )
+    }
+}
+
+@Composable
+fun TopAppBarActionIconButton(
+    onClick: () -> Unit,
+    imageVector: ImageVector,
+    enabled: Boolean = true
+) {
+    IconButton(
+        onClick = onClick,
+        enabled = enabled
+    ) {
+        Icon(
+            imageVector = imageVector,
+            contentDescription = "Localized description"
+        )
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -58,8 +95,25 @@ fun MainScreen(
     var viewSelected by remember { mutableStateOf(ViewSelected.LogicalView) }
     var appBarTitleRID by remember { mutableStateOf(R.string.app_bar_title_home) }
     var settingsChanged by remember { mutableStateOf(false) }
-    var snackBarMessage by remember { mutableStateOf("") }
     val openAboutDialog = remember { mutableStateOf(false) }
+    val requestAppPermissions = remember { mutableStateOf(true) }
+    var sesamiActivated by remember { mutableStateOf(sesami.activated.value) }
+
+    sesami.activated.subscribe {
+        sesamiActivated = it
+    }
+
+    if (requestAppPermissions.value) {
+        RequestAppPermissions { granted ->
+            if (granted) {
+                sesami.activate(context)
+            } else {
+                // TODO: show warning?
+            }
+        }
+
+        requestAppPermissions.value = false
+    }
 
     val changeView = fun (next: ViewSelected, titleID: Int): Int {
         val current = viewSelected
@@ -73,12 +127,8 @@ fun MainScreen(
             sesami.configure(preferences)
 
             // Enforce sesami to use new settings
-            // TODO: fixme
-            //sesami.deactivate()
-            //sesami.activate()
-
-            // Inform user
-            snackBarMessage = getString(context, R.string.snackbar_message_settings_updated)
+            sesami.deactivate()
+            sesami.activate(context)
         }
 
         viewSelected = next
@@ -96,47 +146,35 @@ fun MainScreen(
         topBar = {
             Box {
                 TopAppBar(
-                    title = {
-                        Text(
-                            text = stringResource(appBarTitleRID),
-                            maxLines = 1,
-                            fontWeight = FontWeight.Bold,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    },
-                    navigationIcon = {
-                        IconButton(onClick = { menuExpanded = true }) {
-                            Icon(
-                                imageVector = Icons.Filled.Menu,
-                                contentDescription = "Localized description"
-                            )
-                        }
-                    },
+                    title = { TopAppBarTitle(appBarTitleRID) },
+                    navigationIcon = { TopAppBarNavigationIcon(onClick = { menuExpanded = true }) },
                     actions = {
-                        IconButton(onClick = {
-                            appBarTitleRID = changeView(ViewSelected.LogicalView, R.string.app_bar_title_home)
-                        }) {
-                            Icon(
-                                imageVector = Icons.Filled.Home,
-                                contentDescription = "Localized description"
-                            )
-                        }
-                        IconButton(onClick = {
-                            appBarTitleRID = changeView(ViewSelected.DetailedStatusView, R.string.app_bar_title_detailed_status)
-                        }) {
-                            Icon(
-                                imageVector = Icons.Filled.DateRange,
-                                contentDescription = "Localized description"
-                            )
-                        }
-                        IconButton(onClick = {
-                            appBarTitleRID = changeView(ViewSelected.SettingsView, R.string.app_bar_title_settings)
-                        }) {
-                            Icon(
-                                imageVector = Icons.Filled.Settings,
-                                contentDescription = "Localized description"
-                            )
-                        }
+                        TopAppBarActionIconButton(
+                            onClick = { appBarTitleRID = changeView(ViewSelected.LogicalView,
+                                R.string.app_bar_title_home)
+                            },
+                            imageVector = Icons.Filled.Home
+                        )
+
+                        TopAppBarActionIconButton(
+                            onClick = { appBarTitleRID = changeView(ViewSelected.DetailedStatusView,
+                                R.string.app_bar_title_detailed_status)
+                            },
+                            imageVector = Icons.Filled.DateRange
+                        )
+
+                        TopAppBarActionIconButton(
+                            onClick = { sesami.activate(context) },
+                            imageVector = Icons.Outlined.Refresh,
+                            enabled = (!sesamiActivated)
+                        )
+
+                        TopAppBarActionIconButton(
+                            onClick = { appBarTitleRID = changeView(ViewSelected.SettingsView,
+                                R.string.app_bar_title_settings)
+                            },
+                            imageVector = Icons.Filled.Settings
+                        )
                     }
                 )
                 DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
@@ -194,29 +232,6 @@ fun MainScreen(
                 }
             }
         },
-        bottomBar = {
-            Box {
-                Snackbar(
-                    action = {
-                        IconButton(
-                            onClick = { snackBarMessage = "" },
-                            enabled = (snackBarMessage.isNotEmpty())
-                        ) {
-                            Icon(Icons.Outlined.Clear, contentDescription = "Localized description")
-                        }
-                    },
-                    modifier = Modifier.padding(8.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (sesami.simulated()) {
-                            Icon(Icons.Outlined.Star, contentDescription = "Localized description")
-                            Text(text = "demo   ")
-                        }
-                        Text(text = snackBarMessage)
-                    }
-                }
-            }
-        }
     )
 }
 
