@@ -166,19 +166,22 @@ open class NukiSesamiClient (
             return
         }
 
-        if (connectionType.value == ConnectionType.MQTT) {
-            if (mqtt == null) {
-                mqtt = getMqttClient(context)
+        when(connectionType.value) {
+            ConnectionType.MQTT -> {
+                if (mqtt == null) {
+                    mqtt = getMqttClient(context)
+                }
             }
-        } else { // Bluetooth
-            if (bluetooth == null) {
-                try {
-                    bluetooth = getBluetoothService(context)
-                } catch (e: BluetoothServiceError) {
-                    Log.e("bluetooth", "activate failed", e)
-                    bluetooth = null
-                    connected.value = false
-                    connectionError.value = e.toString()
+            ConnectionType.Bluetooth -> {
+                if (bluetooth == null) {
+                    try {
+                        bluetooth = getBluetoothService(context)
+                    } catch (e: BluetoothServiceError) {
+                        Log.e("bluetooth", "activate failed", e)
+                        bluetooth = null
+                        connected.value = false
+                        connectionError.value = e.toString()
+                    }
                 }
             }
         }
@@ -191,11 +194,13 @@ open class NukiSesamiClient (
             return
         }
 
-        if (connectionType.value == ConnectionType.MQTT) {
-            mqtt!!.close()
+        if (mqtt != null) {
+            mqtt?.close()
             mqtt = null
-        } else { // Bluetooth
-            bluetooth!!.close()
+        }
+
+        if (bluetooth != null) {
+            bluetooth?.close()
             bluetooth = null
         }
 
