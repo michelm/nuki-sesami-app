@@ -23,23 +23,15 @@ class MainActivity : ComponentActivity() {
 
             val simulation = preferences.load(R.string.preferences_key_simulation_mode, false)
             sesami = if (simulation) NukiSesamiSimulation() else NukiSesamiClient()
-
-            val bluetooth = preferences.load(R.string.preferences_key_prefer_bluetooth, false)
+            sesami.configure(preferences)
 
             NukiSesamiAppTheme {
-                if (bluetooth) {
-                    // TODO: Ask Bluetooth permissions
-                }
-
                 MainScreen(
                     preferences = preferences,
                     sesami = sesami,
                     modifier = Modifier
                 )
             }
-
-            sesami.configure(preferences)
-            sesami.activate(context)
         }
     }
 }
