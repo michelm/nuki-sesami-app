@@ -88,6 +88,7 @@ class MqttClient(
 
     fun close() {
         Log.d("mqtt", "close(this=$this)")
+        mqtt.disconnect()
         mqtt.close()
     }
 
