@@ -164,6 +164,7 @@ open class NukiSesamiClient (
         lockState.value = LockState.Undefined
         version.value = "0.0.0"
         connected.value = false
+        connectionError.value = ""
         activated.value = false
     }
 

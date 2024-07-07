@@ -34,7 +34,7 @@ class DummyConnection(
 
                 val c = Random.nextBoolean()
                 connected.value = c
-                error.value = if (c) "" else "Oeps I did it again!"
+                error.value = if (c) "Ok" else "Oeps I did it again!"
             }
         )
     }
