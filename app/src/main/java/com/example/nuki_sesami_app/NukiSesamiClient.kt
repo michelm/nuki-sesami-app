@@ -12,6 +12,10 @@ import com.example.nuki_sesami_app.base.NUKI_SESAMI_DEFAULT_MQTT_USERNAME
 import com.example.nuki_sesami_app.base.NUKI_SESAMI_DEFAULT_MQTT_PASSWORD
 import com.example.nuki_sesami_app.base.NUKI_SESAMI_DEFAULT_BLUETOOTH_ADDRESS
 import com.example.nuki_sesami_app.base.NUKI_SESAMI_DEFAULT_BLUETOOTH_CHANNEL
+import com.example.nuki_sesami_app.connections.BluetoothService
+import com.example.nuki_sesami_app.connections.DummyConnection
+import com.example.nuki_sesami_app.connections.MqttClient
+import com.example.nuki_sesami_app.connections.NukiSesamiConnection
 import com.example.nuki_sesami_app.errors.BluetoothServiceError
 import com.example.nuki_sesami_app.state.ConnectionType
 import com.example.nuki_sesami_app.state.DoorAction
@@ -63,78 +67,48 @@ open class NukiSesamiClient (
     var connected = ObservableState(false)
         protected set
 
-    private var mqtt: MqttClient? = null
-    private var bluetooth: BluetoothService? = null
+    private var connection: NukiSesamiConnection? = null
 
-    private fun getMqttClient(context: Context): MqttClient {
-        val mqtt = MqttClient(
+    private fun getMqttClient(): MqttClient {
+        return MqttClient(
             mqttHostname,
             mqttPort,
             mqttUsername,
             mqttPassword,
             nukiDeviceID
         )
-
-        mqtt.connected.subscribe { value ->
-            (context as Activity).runOnUiThread {
-                connected.value = value
-            }
-        }
-
-        mqtt.error.subscribe { value ->
-            (context as Activity).runOnUiThread {
-                connectionError.value = value
-            }
-        }
-
-        mqtt.subscribe { topic, message ->
-            (context as Activity).runOnUiThread {
-                when (topic) {
-                    "sesami/${nukiDeviceID}/version" -> version.value = message
-                    "sesami/${nukiDeviceID}/state" -> {
-                        doorState.value = DoorState.from(message)
-                        doorAction.value = when (doorState.value) {
-                            DoorState.Closed -> DoorAction.Open
-                            DoorState.OpenHold -> DoorAction.Close
-                            DoorState.Opened -> DoorAction.None
-                            DoorState.Unknown -> DoorAction.None
-                        }
-                    }
-
-                    "sesami/${nukiDeviceID}/mode" -> doorMode.value = DoorMode.from(message)
-                    "nuki/${nukiDeviceID}/doorsensorState" -> {
-                        doorSensor.value = DoorSensorState.from(message)
-                    }
-
-                    "nuki/${nukiDeviceID}/state" -> lockState.value = LockState.from(message)
-                }
-            }
-        }
-
-        return mqtt
     }
 
-    private fun getBluetoothService(context: Context): BluetoothService {
-        val bluetooth = BluetoothService(
-            context = context,
-            nukiDeviceID = nukiDeviceID,
-            address = bluetoothAddress,
-            channel = bluetoothChannel,
-        )
+    private fun getBluetoothService(context: Context): BluetoothService? {
+        try {
+            return BluetoothService(
+                context = context,
+                nukiDeviceID = nukiDeviceID,
+                address = bluetoothAddress,
+                channel = bluetoothChannel,
+            )
+        } catch (e: BluetoothServiceError) {
+            Log.e("bluetooth", "activate failed", e)
+            connected.value = false
+            connectionError.value = e.toString()
+            return null
+        }
+    }
 
-        bluetooth.connected.subscribe { value ->
+    private fun connectorSubscribe(connection: NukiSesamiConnection, context: Context) {
+        connection.connected.subscribe { value ->
             (context as Activity).runOnUiThread {
                 connected.value = value
             }
         }
 
-        bluetooth.error.subscribe { value ->
+        connection.error.subscribe { value ->
             (context as Activity).runOnUiThread {
                 connectionError.value = value
             }
         }
 
-        bluetooth.subscribe { topic, message ->
+        connection.subscribe { topic, message ->
             (context as Activity).runOnUiThread {
                 when (topic) {
                     "sesami/${nukiDeviceID}/version" -> version.value = message
@@ -157,8 +131,6 @@ open class NukiSesamiClient (
                 }
             }
         }
-
-        return bluetooth
     }
 
     open fun activate(context: Context) {
@@ -166,26 +138,14 @@ open class NukiSesamiClient (
             return
         }
 
-        when(connectionType.value) {
-            ConnectionType.MQTT -> {
-                if (mqtt == null) {
-                    mqtt = getMqttClient(context)
-                }
-            }
-            ConnectionType.Bluetooth -> {
-                if (bluetooth == null) {
-                    try {
-                        bluetooth = getBluetoothService(context)
-                    } catch (e: BluetoothServiceError) {
-                        Log.e("bluetooth", "activate failed", e)
-                        bluetooth = null
-                        connected.value = false
-                        connectionError.value = e.toString()
-                    }
-                }
-            }
+        connection?.close()
+        connection = when(connectionType.value) {
+            ConnectionType.MQTT -> getMqttClient()
+            ConnectionType.Bluetooth -> getBluetoothService(context)
+            ConnectionType.Simulated -> DummyConnection(nukiDeviceID)
         }
 
+        connection?.let { connectorSubscribe(it, context) }
         activated.value = true
     }
 
@@ -194,15 +154,8 @@ open class NukiSesamiClient (
             return
         }
 
-        if (mqtt != null) {
-            mqtt?.close()
-            mqtt = null
-        }
-
-        if (bluetooth != null) {
-            bluetooth?.close()
-            bluetooth = null
-        }
+        connection?.close()
+        connection = null
 
         doorState.value = DoorState.Unknown
         doorMode.value = DoorMode.Unknown
@@ -230,9 +183,15 @@ open class NukiSesamiClient (
         bluetoothChannel = preferences.load(
             R.string.preferences_key_bluetooth_channel, NUKI_SESAMI_DEFAULT_BLUETOOTH_CHANNEL)
 
-        val preferBluetooth = preferences.load(
-            R.string.preferences_key_prefer_bluetooth, false)
-        connectionType.value = if (preferBluetooth) ConnectionType.Bluetooth else ConnectionType.MQTT
+        simulated.value = preferences.load(R.string.preferences_key_simulation_mode, false)
+
+        if (simulated.value) {
+            connectionType.value = ConnectionType.Simulated
+        } else {
+            val preferBluetooth = preferences.load(R.string.preferences_key_prefer_bluetooth, false)
+            connectionType.value =
+                if (preferBluetooth) ConnectionType.Bluetooth else ConnectionType.MQTT
+        }
     }
 
     open fun openDoor(hold: Boolean) {
@@ -241,16 +200,7 @@ open class NukiSesamiClient (
         }
 
         val request = if (hold) DoorRequestState.OpenHold else DoorRequestState.Open
-
-        if (connectionType.value == ConnectionType.MQTT) {
-            if (mqtt!!.connected.value) {
-                mqtt!!.publish("sesami/${nukiDeviceID}/request/state", request.value.toString())
-            }
-        } else { // Bluetooth
-            if (bluetooth!!.connected.value) {
-                bluetooth!!.publish("sesami/${nukiDeviceID}/request/state", request.value.toString())
-            }
-        }
+        connection?.publish("sesami/${nukiDeviceID}/request/state", request.value.toString())
     }
 
     open fun closeDoor() {
@@ -259,15 +209,6 @@ open class NukiSesamiClient (
         }
 
         val request = DoorRequestState.Close
-
-        if (connectionType.value == ConnectionType.MQTT) {
-            if (mqtt!!.connected.value) {
-                mqtt!!.publish("sesami/${nukiDeviceID}/request/state", request.value.toString())
-            }
-        } else { // Bluetooth
-            if (bluetooth!!.connected.value) {
-                bluetooth!!.publish("sesami/${nukiDeviceID}/request/state", request.value.toString())
-            }
-        }
+        connection?.publish("sesami/${nukiDeviceID}/request/state", request.value.toString())
     }
 }

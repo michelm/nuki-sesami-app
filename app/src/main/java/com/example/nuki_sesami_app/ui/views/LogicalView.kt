@@ -43,7 +43,6 @@ import com.example.nuki_sesami_app.state.DoorAction
 import com.example.nuki_sesami_app.state.DoorState
 import com.example.nuki_sesami_app.state.LockState
 import com.example.nuki_sesami_app.NukiSesamiClient
-import com.example.nuki_sesami_app.NukiSesamiSimulation
 import com.example.nuki_sesami_app.R
 import com.example.nuki_sesami_app.base.UserPreferences
 import com.example.nuki_sesami_app.ui.misc.doorActionText
@@ -190,7 +189,7 @@ fun LogicalView(
 @Composable
 fun LogicalViewPreview() {
     LogicalView(
-        sesami = NukiSesamiSimulation(),
+        sesami = NukiSesamiClient(),
         modifier = Modifier,
         preferences = UserPreferences(),
     )

@@ -37,7 +37,6 @@ import com.example.nuki_sesami_app.state.DoorSensorState
 import com.example.nuki_sesami_app.state.DoorState
 import com.example.nuki_sesami_app.state.LockState
 import com.example.nuki_sesami_app.NukiSesamiClient
-import com.example.nuki_sesami_app.NukiSesamiSimulation
 import com.example.nuki_sesami_app.R
 import com.example.nuki_sesami_app.ui.misc.doorActionText
 import com.example.nuki_sesami_app.ui.misc.doorModeText
@@ -128,7 +127,8 @@ fun DetailedStatusView(
         )
 
         DetailedStatusViewEntry(Icons.Filled.Star,
-            stringResource(R.string.detailed_status_view_simulated), simulated.toString()
+            stringResource(R.string.detailed_status_view_simulated), simulated.toString(),
+            tint = if (simulated) MaterialTheme.colorScheme.primary else null
         )
 
         DetailedStatusViewEntry(Icons.Filled.Info,
@@ -174,6 +174,6 @@ fun DetailedStatusView(
 fun DetailedStatusViewPreview() {
     DetailedStatusView(
         modifier = Modifier,
-        sesami = NukiSesamiSimulation()
+        sesami = NukiSesamiClient()
     )
 }

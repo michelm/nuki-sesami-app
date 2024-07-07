@@ -74,5 +74,6 @@ fun connectionTypeText(connection: ConnectionType): String {
     return when (connection) {
         ConnectionType.MQTT -> "mqtt"
         ConnectionType.Bluetooth -> "bluetooth"
+        ConnectionType.Simulated -> "demo"
     }
 }

@@ -1,7 +1,6 @@
-package com.example.nuki_sesami_app
+package com.example.nuki_sesami_app.connections
 
 import android.util.Log
-import com.example.nuki_sesami_app.base.ObservableState
 import org.eclipse.paho.client.mqttv3.IMqttActionListener
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken
 import org.eclipse.paho.client.mqttv3.IMqttToken
@@ -17,16 +16,7 @@ class MqttClient(
     private var username: String,
     private var passwd: String,
     private val nukiDeviceID: String,
-) {
-    /** Observable state, will be set to true when connected */
-    var connected = ObservableState(false)
-
-    /** Observable state, will be set in case of (connection) errors */
-    var error = ObservableState("")
-
-    /** List of subscribers to message events */
-    private val observers = ArrayList<(String, String) -> Unit>()
-
+): NukiSesamiConnection() {
     /** Contains the actual PAHO client handle */
     private var mqtt: MqttAsyncClient = MqttAsyncClient(
         "tcp://$hostname:$port",
@@ -86,26 +76,14 @@ class MqttClient(
         })
     }
 
-    fun close() {
+    override fun close() {
         Log.d("mqtt", "close(this=$this)")
         mqtt.disconnect()
         mqtt.close()
     }
 
-    /** Notifies all observers a new message for a specific topic has arrived */
-    private fun notify(topic: String, message: String) {
-        observers.forEach {
-            it(topic, message)
-        }
-    }
-
-    /** Used by observers so they can be notified when a message has arrived */
-    fun subscribe(observer: (String, String) -> Unit) {
-        observers.add(observer)
-    }
-
     /** Publishes a message on a topic */
-    fun publish(topic: String, value: String) {
+    override fun publish(topic: String, value: String) {
         val message = MqttMessage()
         message.payload = value.toByteArray()
         message.qos = 0

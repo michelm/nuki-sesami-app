@@ -1,4 +1,4 @@
-package com.example.nuki_sesami_app
+package com.example.nuki_sesami_app.connections
 
 import android.Manifest
 import android.bluetooth.BluetoothAdapter
@@ -8,7 +8,6 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.util.Log
 import androidx.core.app.ActivityCompat
-import com.example.nuki_sesami_app.base.ObservableState
 import com.example.nuki_sesami_app.errors.BluetoothServiceError
 import com.example.nuki_sesami_app.jsonrpc.DoorRequestMessage
 import com.example.nuki_sesami_app.jsonrpc.DoorRequestParams
@@ -27,18 +26,9 @@ class BluetoothService(
     private var address: String = "",
     private var name: String = "",
     val channel: Int = 4,
-) {
+): NukiSesamiConnection() {
     /** Send and receive RCFCOMM data on this socket */
     private var socket: BluetoothSocket
-
-    /** Observable state, will be set to true when connected */
-    var connected = ObservableState(false)
-
-    /** Observable state, will be set in case of (connection) errors */
-    var error = ObservableState("")
-
-    /** List of subscribers to message events */
-    private val observers = ArrayList<(String, String) -> Unit>()
 
     /** background reader and connection check */
     private var timer: Timer
@@ -134,7 +124,7 @@ class BluetoothService(
         return ""
     }
 
-    fun close() {
+    override fun close() {
         timer.cancel()
         timer.purge()
         socket.close()
@@ -143,24 +133,8 @@ class BluetoothService(
         Log.d("bluetooth", "closed")
     }
 
-    /** Notifies all observers a new message for a specific topic has arrived */
-    private fun notify(topic: String, message: String) {
-        observers.forEach {
-            it(topic, message)
-        }
-    }
-
-    private fun notify(topic: String, value: Int) {
-        notify(topic, value.toString())
-    }
-
-    /** Used by observers so they can be notified when a message has arrived */
-    fun subscribe(observer: (String, String) -> Unit) {
-        observers.add(observer)
-    }
-
     /** Publishes a message on the channel */
-    fun publish(topic: String, value: String) {
+    override fun publish(topic: String, value: String) {
         if (topic != "sesami/${nukiDeviceID}/request/state") {
             return
         }

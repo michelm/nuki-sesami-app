@@ -20,9 +20,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             val context = LocalContext.current
             preferences = UserPreferences(context)
-
-            val simulation = preferences.load(R.string.preferences_key_simulation_mode, false)
-            sesami = if (simulation) NukiSesamiSimulation() else NukiSesamiClient()
+            sesami = NukiSesamiClient()
             sesami.configure(preferences)
 
             NukiSesamiAppTheme {
