@@ -7,12 +7,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
-import androidx.compose.material3.ElevatedButton
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -23,11 +19,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
@@ -72,27 +66,6 @@ fun parseBluetoothChannelArg(arg: Int?): Int? {
     }
 
     return arg
-}
-
-@Composable
-fun SettingsViewButton(
-    onClick: () -> Unit,
-    drawableResID: Int,
-    caption: String
-) {
-    ElevatedButton(
-        modifier = Modifier.padding(end = 5.dp),
-        onClick = onClick
-    ) {
-        Icon(
-            modifier = Modifier
-                .padding(end = 3.dp)
-                .size(20.dp),
-            painter = painterResource(drawableResID),
-            contentDescription = "Localized Description"
-        )
-        Text(caption, fontSize = 18.sp)
-    }
 }
 
 @Composable
@@ -146,7 +119,6 @@ fun SettingsView(
     var validBluetoothAddress by remember { mutableStateOf (true) }
     var validBluetoothChannel by remember { mutableStateOf (true) }
     var validNukiDeviceID by remember { mutableStateOf (true) }
-    val openQRCodeDialog = remember { mutableStateOf(false) }
 
     Box {
         Column(
@@ -154,31 +126,6 @@ fun SettingsView(
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                SettingsViewButton(
-                    onClick = { openQRCodeDialog.value = true },
-                    drawableResID = R.drawable.qr_code_2_24px,
-                    caption = "code"
-                )
-                SettingsViewButton(
-                    onClick = { /* TODO: open QR scanner and processing logic */ },
-                    drawableResID = R.drawable.qr_code_scanner_24px,
-                    caption = "scan"
-                )
-            }
-
-            HorizontalDivider(
-                thickness = 2.dp,
-                modifier = Modifier.padding(
-                    start = 20.dp,
-                    end = 20.dp,
-                    top = 5.dp,
-                    bottom = 5.dp
-                )
-            )
-
             Column(horizontalAlignment = Alignment.Start
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically
@@ -327,15 +274,6 @@ fun SettingsView(
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
                     )
                 }
-            }
-        }
-
-        when {
-            openQRCodeDialog.value -> {
-                QRCodeDialog(
-                    onDismissRequest = { openQRCodeDialog.value = false },
-                    preferences = preferences,
-                )
             }
         }
     }

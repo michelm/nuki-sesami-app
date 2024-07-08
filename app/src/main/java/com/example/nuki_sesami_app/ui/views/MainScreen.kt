@@ -95,10 +95,10 @@ fun MainScreen(
     var settingsChanged by remember { mutableStateOf(false) }
     val openAboutDialog = remember { mutableStateOf(false) }
     val requestAppPermissions = remember { mutableStateOf(true) }
-    var sesamiActivated by remember { mutableStateOf(sesami.activated.value) }
+    var sesamiConnected by remember { mutableStateOf(sesami.connected.value) }
 
-    sesami.activated.subscribe {
-        sesamiActivated = it
+    sesami.connected.subscribe {
+        sesamiConnected = it
     }
 
     if (requestAppPermissions.value) {
@@ -162,9 +162,12 @@ fun MainScreen(
                         )
 
                         TopAppBarActionIconButton(
-                            onClick = { sesami.activate(context) },
+                            onClick = {
+                                sesami.deactivate()
+                                sesami.activate(context)
+                                      },
                             imageVector = Icons.Outlined.Refresh,
-                            enabled = (!sesamiActivated)
+                            enabled = (!sesamiConnected)
                         )
 
                         TopAppBarActionIconButton(

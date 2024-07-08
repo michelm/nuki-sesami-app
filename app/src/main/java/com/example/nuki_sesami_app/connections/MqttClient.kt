@@ -78,7 +78,10 @@ class MqttClient(
 
     override fun close() {
         Log.d("mqtt", "close(this=$this)")
-        mqtt.disconnect()
+        if (mqtt.isConnected) {
+            mqtt.disconnect()
+        }
+
         mqtt.close()
     }
 
