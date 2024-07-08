@@ -37,7 +37,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.example.nuki_sesami_app.R
 import com.example.nuki_sesami_app.base.UserPreferences
 import com.example.nuki_sesami_app.NukiSesamiClient
-import com.example.nuki_sesami_app.state.ViewSelected
 import com.example.nuki_sesami_app.ui.misc.RequestAppPermissions
 import com.example.nuki_sesami_app.ui.theme.NukiSesamiAppTheme
 
