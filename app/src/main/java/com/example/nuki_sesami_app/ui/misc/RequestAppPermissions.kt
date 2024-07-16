@@ -18,8 +18,8 @@ val REQUIRED_APP_PERMISSIONS = arrayOf(
     android.Manifest.permission.BLUETOOTH_SCAN,
 )
 
-fun hasAppPermissions(context: Context): Boolean {
-    return REQUIRED_APP_PERMISSIONS.all {
+fun hasAppPermissions(context: Context, permissions: Array<String> = REQUIRED_APP_PERMISSIONS): Boolean {
+    return permissions.all {
         ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
     }
 }

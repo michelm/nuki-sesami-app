@@ -1,5 +1,6 @@
 package com.example.nuki_sesami_app
 
+import android.bluetooth.BluetoothAdapter
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -13,6 +14,7 @@ import com.example.nuki_sesami_app.ui.views.MainScreen
 class MainActivity : ComponentActivity() {
     private lateinit var preferences: UserPreferences
     private lateinit var sesami: NukiSesamiClient
+    private val bluetoothAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -20,6 +22,10 @@ class MainActivity : ComponentActivity() {
         setContent {
             val context = LocalContext.current
             preferences = UserPreferences(context)
+
+            // TODO: force app to not use mqtt/bluetooth on startup
+            //preferences.save(R.string.preferences_key_simulation_mode, true)
+
             sesami = NukiSesamiClient()
             sesami.configure(preferences)
 
@@ -27,6 +33,7 @@ class MainActivity : ComponentActivity() {
                 MainScreen(
                     preferences = preferences,
                     sesami = sesami,
+                    bluetoothAdapter = bluetoothAdapter,
                     modifier = Modifier
                 )
             }

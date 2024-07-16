@@ -1,5 +1,6 @@
 package com.example.nuki_sesami_app.ui.views
 
+import android.bluetooth.BluetoothAdapter
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -86,6 +87,7 @@ fun TopAppBarActionIconButton(
 fun MainScreen(
     preferences: UserPreferences,
     sesami: NukiSesamiClient,
+    bluetoothAdapter: BluetoothAdapter?,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -220,6 +222,7 @@ fun MainScreen(
                 MainContent(
                     preferences = preferences,
                     sesami = sesami,
+                    bluetoothAdapter = bluetoothAdapter,
                     viewSelected = viewSelected,
                     modifier = modifier.padding(innerPadding)
                 )
@@ -240,13 +243,14 @@ fun MainScreen(
 fun MainContent(
     preferences: UserPreferences,
     sesami: NukiSesamiClient,
+    bluetoothAdapter: BluetoothAdapter?,
     viewSelected: ViewSelected,
     modifier: Modifier = Modifier
 ) {
     when(viewSelected) {
         ViewSelected.LogicalView -> LogicalView(sesami, modifier, preferences)
         ViewSelected.DetailedStatusView -> DetailedStatusView(sesami, modifier)
-        ViewSelected.SettingsView -> SettingsView(modifier, preferences)
+        ViewSelected.SettingsView -> SettingsView(modifier, preferences, bluetoothAdapter)
     }
 }
 
@@ -257,6 +261,7 @@ fun MainScreenPreview() {
         MainScreen(
             preferences = UserPreferences(),
             sesami = NukiSesamiClient(),
+            bluetoothAdapter = null,
             modifier = Modifier
         )
     }

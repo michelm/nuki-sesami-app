@@ -50,8 +50,10 @@
     <string name="settings_label_mqtt_port">MQTT Port</string>
     <string name="settings_label_mqtt_username">MQTT Username</string>
     <string name="settings_label_mqtt_password">MQTT Password</string>
-    <string name="settings_label_bluetooth_address">Bluetooth Address</string>
+    <string name="settings_label_bluetooth_device">Bluetooth Device</string>
     <string name="settings_label_bluetooth_channel">Bluetooth Channel</string>
+    <string name="settings_button_select_bluetooth_device">Change Bluetooth Device</string>
+    <string name="settings_select_bluetooth_device">Select Device</string>
     <string name="tooltip_electric_door_state">Electric door state</string>
     <string name="tooltip_smart_lock_state">Smart lock state</string>
     <string name="tooltip_sesami_connection_state">Sesami connection type</string>
@@ -63,6 +65,7 @@
     <string name="preferences_key_mqtt_port">mqtt_int_port</string>
     <string name="preferences_key_mqtt_username">mqtt_username</string>
     <string name="preferences_key_mqtt_password">mqtt_password</string>
+    <string name="preferences_key_bluetooth_device">bluetooth_device</string>
     <string name="preferences_key_bluetooth_address">bluetooth_address</string>
     <string name="preferences_key_bluetooth_channel">bluetooth_int_channel</string>
     <string name="preferences_key_switch_openhold">switch_openhold</string>
