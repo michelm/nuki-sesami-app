@@ -1,6 +1,8 @@
 package com.example.nuki_sesami_app.ui.views
 
 import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothManager
+import android.content.Context
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -87,7 +89,7 @@ fun TopAppBarActionIconButton(
 fun MainScreen(
     preferences: UserPreferences,
     sesami: NukiSesamiClient,
-    bluetoothAdapter: BluetoothAdapter?,
+    bluetoothAdapter: BluetoothAdapter,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -106,7 +108,7 @@ fun MainScreen(
     if (requestAppPermissions.value) {
         RequestAppPermissions { granted ->
             if (granted) {
-                sesami.activate(context)
+                sesami.activate(context, bluetoothAdapter)
             } else {
                 // TODO: show warning?
             }
@@ -128,7 +130,7 @@ fun MainScreen(
 
             // Enforce sesami to use new settings
             sesami.deactivate()
-            sesami.activate(context)
+            sesami.activate(context, bluetoothAdapter)
         }
 
         viewSelected = next
@@ -166,7 +168,7 @@ fun MainScreen(
                         TopAppBarActionIconButton(
                             onClick = {
                                 sesami.deactivate()
-                                sesami.activate(context)
+                                sesami.activate(context, bluetoothAdapter)
                                       },
                             imageVector = Icons.Outlined.Refresh,
                             enabled = (!sesamiConnected)
@@ -257,11 +259,14 @@ fun MainContent(
 @Preview(showBackground = true)
 @Composable
 fun MainScreenPreview() {
+    val context = LocalContext.current
+    val manager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+
     NukiSesamiAppTheme {
         MainScreen(
             preferences = UserPreferences(),
             sesami = NukiSesamiClient(),
-            bluetoothAdapter = null,
+            bluetoothAdapter = manager.adapter,
             modifier = Modifier
         )
     }

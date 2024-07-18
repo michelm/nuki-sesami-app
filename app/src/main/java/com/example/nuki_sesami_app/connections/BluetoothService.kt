@@ -22,6 +22,7 @@ import kotlin.concurrent.timer
 
 class BluetoothService(
     val context: Context,
+    val adapter: BluetoothAdapter,
     private val nukiDeviceID: String,
     private var address: String = "",
     private var name: String = "",
@@ -41,10 +42,7 @@ class BluetoothService(
             PackageManager.PERMISSION_GRANTED) {
             throw BluetoothServiceError("Got no Bluetooth connect permission")
         }
-
-        val adapter: BluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
-            ?: throw BluetoothServiceError("Failed to obtain Bluetooth adapter")
-
+        
         adapter.cancelDiscovery()
         val devices: Set<BluetoothDevice>? = adapter.bondedDevices
         val device: BluetoothDevice = devices?.firstOrNull { it.address == address || it.name == name }

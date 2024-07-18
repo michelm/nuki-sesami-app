@@ -1,6 +1,7 @@
 package com.example.nuki_sesami_app
 
 import android.app.Activity
+import android.bluetooth.BluetoothAdapter
 import android.content.Context
 import android.util.Log
 import com.example.nuki_sesami_app.base.ObservableState
@@ -79,10 +80,11 @@ open class NukiSesamiClient (
         )
     }
 
-    private fun getBluetoothService(context: Context): BluetoothService? {
+    private fun getBluetoothService(context: Context, adapter: BluetoothAdapter): BluetoothService? {
         try {
             return BluetoothService(
                 context = context,
+                adapter = adapter,
                 nukiDeviceID = nukiDeviceID,
                 address = bluetoothAddress,
                 channel = bluetoothChannel,
@@ -133,7 +135,7 @@ open class NukiSesamiClient (
         }
     }
 
-    open fun activate(context: Context) {
+    open fun activate(context: Context, bluetoothAdapter: BluetoothAdapter) {
         if (activated.value) {
             return
         }
@@ -141,7 +143,7 @@ open class NukiSesamiClient (
         connection?.close()
         connection = when(connectionType.value) {
             ConnectionType.MQTT -> getMqttClient()
-            ConnectionType.Bluetooth -> getBluetoothService(context)
+            ConnectionType.Bluetooth -> getBluetoothService(context, bluetoothAdapter)
             ConnectionType.Simulated -> DummyConnection(nukiDeviceID)
         }
 
