@@ -59,9 +59,10 @@ class BluetoothService(
     /** routine for checking the connection state and receiving data from the socket */
     private var receiver: Job? = coroutineScope?.launch {
         withContext(Dispatchers.IO) {
+            var connectAttempts = 0
             while (true) {
+                delay(1000)
                 connected.value = socket.isConnected
-                Log.d("bluetooth", "receiver(connected=${connected.value})")
 
                 if (socket.isConnected) {
                     try {
@@ -70,11 +71,20 @@ class BluetoothService(
                         connected.value = false
                         error.value = e.toString()
                     }
-                }
+                } else {
+                    connectAttempts += 1
 
-                delay(1000)
+                    if (connectAttempts == MAX_CONNECT_ATTEMPTS) {
+                        error.value = "Connect timeout"
+                        Log.d("bluetooth", "receiver connect timeout ${MAX_CONNECT_ATTEMPTS}[s]")
+                    }
+                }
             }
         }
+    }
+
+    companion object {
+        const val MAX_CONNECT_ATTEMPTS = 10
     }
 
     private fun getBluetoothSocket(): BluetoothSocket {
@@ -153,7 +163,6 @@ class BluetoothService(
         Log.d("bluetooth", "closed")
     }
 
-    /** Publishes a message on the channel */
     override fun publish(topic: String, value: String) {
         if (!connected.value) {
             return

@@ -6,13 +6,15 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.style.TextDecoration
 
-const val LINK_TAG_URL = "ANNOTATION_TAG_URL"
-
 class LinkedAnnotatedString(
     private val source: String,
     private val segment: String,
     private val link: String
 ) {
+    companion object {
+        const val LINK_TAG_URL = "ANNOTATION_TAG_URL"
+    }
+
     @Composable
     fun create(): AnnotatedString {
         val tagStart = source.indexOf(segment) // start of span marked by 'segment'
