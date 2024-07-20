@@ -54,6 +54,7 @@
     <string name="settings_label_bluetooth_channel">Bluetooth Channel</string>
     <string name="settings_button_select_bluetooth_device">Change Bluetooth Device</string>
     <string name="settings_select_bluetooth_device">Select Device</string>
+    <string name="settings_bluetooth_warn_no_devices">No paired devices available</string>
     <string name="tooltip_electric_door_state">Electric door state</string>
     <string name="tooltip_smart_lock_state">Smart lock state</string>
     <string name="tooltip_sesami_connection_state">Sesami connection type</string>

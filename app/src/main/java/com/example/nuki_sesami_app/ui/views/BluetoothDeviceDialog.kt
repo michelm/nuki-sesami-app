@@ -40,10 +40,10 @@ fun BluetoothDeviceDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.settings_select_bluetooth_device)) },
         text = {
-            if (devices.isNotEmpty()) {
-                Column {
-                    HorizontalDivider()
+            Column {
+                HorizontalDivider()
 
+                if (devices.isNotEmpty()) {
                     devices.forEach { device ->
                         Text(
                             text = device.name ?: device.address,
@@ -57,9 +57,9 @@ fun BluetoothDeviceDialog(
                                 .padding(8.dp)
                         )
                     }
+                } else {
+                    Text(stringResource(R.string.settings_bluetooth_warn_no_devices))
                 }
-            } else {
-                Text("No paired devices available") // TODO: localize
             }
         },
         confirmButton = {

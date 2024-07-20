@@ -18,14 +18,14 @@ class MqttClient(
     private val nukiDeviceID: String,
 ): NukiSesamiConnection() {
     /** Contains the actual PAHO client handle */
-    private var mqtt: MqttAsyncClient = MqttAsyncClient(
+    private var client: MqttAsyncClient = MqttAsyncClient(
         "tcp://$hostname:$port",
         MqttAsyncClient.generateClientId(),
         MemoryPersistence()
     )
 
     init {
-        mqtt.setCallback(object : MqttCallback{
+        client.setCallback(object : MqttCallback{
             override fun connectionLost(cause: Throwable?) {
                 Log.w("mqtt", "connectionLost: ${cause.toString()}")
                 connected.value = false
@@ -54,16 +54,16 @@ class MqttClient(
             }
         }
 
-        mqtt.connect(options, object : IMqttActionListener {
+        client.connect(options, object : IMqttActionListener {
             override fun onSuccess(asyncActionToken: IMqttToken) {
                 Log.i("mqtt", "connected(this=$this)")
                 connected.value = true
                 error.value = ""
-                mqtt.subscribe("nuki/${nukiDeviceID}/state", 0)
-                mqtt.subscribe("nuki/${nukiDeviceID}/doorsensorState", 0)
-                mqtt.subscribe("sesami/${nukiDeviceID}/state", 0)
-                mqtt.subscribe("sesami/${nukiDeviceID}/mode", 0)
-                mqtt.subscribe("sesami/${nukiDeviceID}/version", 0)
+                client.subscribe("nuki/${nukiDeviceID}/state", 0)
+                client.subscribe("nuki/${nukiDeviceID}/doorsensorState", 0)
+                client.subscribe("sesami/${nukiDeviceID}/state", 0)
+                client.subscribe("sesami/${nukiDeviceID}/mode", 0)
+                client.subscribe("sesami/${nukiDeviceID}/version", 0)
             }
 
             override fun onFailure(asyncActionToken: IMqttToken, exception: Throwable) {
@@ -76,11 +76,11 @@ class MqttClient(
 
     override fun close() {
         Log.d("mqtt", "close(this=$this)")
-        if (mqtt.isConnected) {
-            mqtt.disconnect()
+        if (client.isConnected) {
+            client.disconnect()
         }
 
-        mqtt.close()
+        client.close()
     }
 
     /** Publishes a message on a topic */
@@ -88,6 +88,6 @@ class MqttClient(
         val message = MqttMessage()
         message.payload = value.toByteArray()
         message.qos = 0
-        mqtt.publish(topic, message)
+        client.publish(topic, message)
     }
 }
