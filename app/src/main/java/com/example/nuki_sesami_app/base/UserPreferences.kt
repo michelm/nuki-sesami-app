@@ -23,7 +23,7 @@ class UserPreferences(
         }
     }
 
-    fun save(key: String, value: String) {
+    private fun save(key: String, value: String) {
         val editor = handle?.edit()
         editor?.putString(key, value)
         editor?.apply()
@@ -35,18 +35,18 @@ class UserPreferences(
             save(getString(context, key), value)
     }
 
-    fun load(key: String, defaultValue: String): String {
+    private fun load(key: String, defaultValue: String): String {
         return handle?.getString(key, defaultValue) ?: defaultValue
     }
 
     fun load(key: Int, defaultValue: String): String {
-        if (context != null)
-            return load(getString(context, key), defaultValue)
+        return if (context != null)
+            load(getString(context, key), defaultValue)
         else
-            return defaultValue
+            defaultValue
     }
 
-    fun save(key: String, value: Int) {
+    private fun save(key: String, value: Int) {
         val editor = handle?.edit()
         editor?.putInt(key, value)
         editor?.apply()
@@ -58,22 +58,19 @@ class UserPreferences(
             save(getString(context, key), value)
     }
 
-    fun load(key: String, defaultValue: Int): Int {
+    private fun load(key: String, defaultValue: Int): Int {
         val value = handle?.getInt(key, defaultValue)
-        if (value != null)
-            return value
-        else
-            return defaultValue
+        return value ?: defaultValue
     }
 
     fun load(key: Int, defaultValue: Int): Int {
-        if (context != null)
-            return load(getString(context, key), defaultValue)
+        return if (context != null)
+            load(getString(context, key), defaultValue)
         else
-            return defaultValue
+            defaultValue
     }
 
-    fun save(key: String, value: Boolean) {
+    private fun save(key: String, value: Boolean) {
         val editor = handle?.edit()
         editor?.putBoolean(key, value)
         editor?.apply()
@@ -85,18 +82,18 @@ class UserPreferences(
             save(getString(context, key), value)
     }
 
-    fun load(key: String, defaultValue: Boolean): Boolean {
+    private fun load(key: String, defaultValue: Boolean): Boolean {
         val value = handle?.getBoolean(key, defaultValue)
-        if (value != null)
-            return value
+        return if (value != null)
+            value
         else
-            return defaultValue
+            defaultValue
     }
 
     fun load(key: Int, defaultValue: Boolean): Boolean {
-        if (context != null)
-            return load(getString(context, key), defaultValue)
+        return if (context != null)
+            load(getString(context, key), defaultValue)
         else
-            return defaultValue
+            defaultValue
     }
 }

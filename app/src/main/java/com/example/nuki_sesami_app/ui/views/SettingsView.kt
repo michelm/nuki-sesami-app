@@ -1,6 +1,5 @@
 package com.example.nuki_sesami_app.ui.views
 
-import android.bluetooth.BluetoothAdapter
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.nuki_sesami_app.NukiSesamiClient
 import com.example.nuki_sesami_app.base.NUKI_SESAMI_DEFAULT_BLUETOOTH_DEVICE
 import com.example.nuki_sesami_app.base.NUKI_SESAMI_DEFAULT_BLUETOOTH_CHANNEL
 import com.example.nuki_sesami_app.base.NUKI_SESAMI_DEFAULT_DEVICE_ID
@@ -297,9 +298,9 @@ fun SettingsViewBluetooth(
 
 @Composable
 fun SettingsView(
+    sesami: NukiSesamiClient,
     modifier: Modifier = Modifier,
     preferences: UserPreferences,
-    bluetoothAdapter: BluetoothAdapter?
 ) {
     var preferBluetooth by remember { mutableStateOf (preferences.load(
         R.string.preferences_key_prefer_bluetooth, false)
@@ -344,7 +345,7 @@ fun SettingsView(
         when {
             showBluetoothDeviceDialog -> {
                 BluetoothDeviceDialog(
-                    bluetoothAdapter = bluetoothAdapter,
+                    bluetoothAdapter = sesami.bluetoothAdapter,
                     onDismiss = { showBluetoothDeviceDialog = false },
                     onDeviceSelected = {
                         showBluetoothDeviceDialog = false
@@ -360,9 +361,10 @@ fun SettingsView(
 @Preview(showBackground = true)
 @Composable
 fun SettingsViewPreview() {
+    val context = LocalContext.current
     SettingsView(
+        sesami = NukiSesamiClient(context, null, null),
         modifier = Modifier,
         preferences = UserPreferences(),
-        bluetoothAdapter = null
     )
 }

@@ -25,8 +25,12 @@ import com.example.nuki_sesami_app.state.DoorRequestState
 import com.example.nuki_sesami_app.state.DoorSensorState
 import com.example.nuki_sesami_app.state.DoorState
 import com.example.nuki_sesami_app.state.LockState
+import kotlinx.coroutines.CoroutineScope
 
 open class NukiSesamiClient (
+    val context: Context,
+    val bluetoothAdapter: BluetoothAdapter?,
+    private val coroutineScope: CoroutineScope?,
     private var nukiDeviceID: String = NUKI_SESAMI_DEFAULT_DEVICE_ID,
     private var mqttHostname: String = NUKI_SESAMI_DEFAULT_MQTT_HOSTNAME,
     private var mqttPort: Int = NUKI_SESAMI_DEFAULT_MQTT_PORT,
@@ -80,11 +84,12 @@ open class NukiSesamiClient (
         )
     }
 
-    private fun getBluetoothService(context: Context, adapter: BluetoothAdapter): BluetoothService? {
+    private fun getBluetoothService(): BluetoothService? {
         try {
             return BluetoothService(
                 context = context,
-                adapter = adapter,
+                adapter = bluetoothAdapter,
+                coroutineScope = coroutineScope,
                 nukiDeviceID = nukiDeviceID,
                 address = bluetoothAddress,
                 channel = bluetoothChannel,
@@ -135,7 +140,7 @@ open class NukiSesamiClient (
         }
     }
 
-    open fun activate(context: Context, bluetoothAdapter: BluetoothAdapter) {
+    open fun activate() {
         if (activated.value) {
             return
         }
@@ -143,7 +148,7 @@ open class NukiSesamiClient (
         connection?.close()
         connection = when(connectionType.value) {
             ConnectionType.MQTT -> getMqttClient()
-            ConnectionType.Bluetooth -> getBluetoothService(context, bluetoothAdapter)
+            ConnectionType.Bluetooth -> getBluetoothService()
             ConnectionType.Simulated -> DummyConnection(nukiDeviceID)
         }
 

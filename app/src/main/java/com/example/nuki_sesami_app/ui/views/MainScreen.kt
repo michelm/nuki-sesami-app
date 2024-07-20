@@ -1,8 +1,5 @@
 package com.example.nuki_sesami_app.ui.views
 
-import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothManager
-import android.content.Context
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -27,6 +24,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -89,13 +87,11 @@ fun TopAppBarActionIconButton(
 fun MainScreen(
     preferences: UserPreferences,
     sesami: NukiSesamiClient,
-    bluetoothAdapter: BluetoothAdapter,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
     var menuExpanded by remember { mutableStateOf(false) }
     var viewSelected by remember { mutableStateOf(ViewSelected.LogicalView) }
-    var appBarTitleRID by remember { mutableStateOf(R.string.app_bar_title_home) }
+    var appBarTitleRID by remember { mutableIntStateOf(R.string.app_bar_title_home) }
     var settingsChanged by remember { mutableStateOf(false) }
     val openAboutDialog = remember { mutableStateOf(false) }
     val requestAppPermissions = remember { mutableStateOf(true) }
@@ -108,7 +104,7 @@ fun MainScreen(
     if (requestAppPermissions.value) {
         RequestAppPermissions { granted ->
             if (granted) {
-                sesami.activate(context, bluetoothAdapter)
+                sesami.activate()
             } else {
                 // TODO: show warning?
             }
@@ -130,7 +126,7 @@ fun MainScreen(
 
             // Enforce sesami to use new settings
             sesami.deactivate()
-            sesami.activate(context, bluetoothAdapter)
+            sesami.activate()
         }
 
         viewSelected = next
@@ -168,7 +164,7 @@ fun MainScreen(
                         TopAppBarActionIconButton(
                             onClick = {
                                 sesami.deactivate()
-                                sesami.activate(context, bluetoothAdapter)
+                                sesami.activate()
                                       },
                             imageVector = Icons.Outlined.Refresh,
                             enabled = (!sesamiConnected)
@@ -224,7 +220,6 @@ fun MainScreen(
                 MainContent(
                     preferences = preferences,
                     sesami = sesami,
-                    bluetoothAdapter = bluetoothAdapter,
                     viewSelected = viewSelected,
                     modifier = modifier.padding(innerPadding)
                 )
@@ -245,14 +240,13 @@ fun MainScreen(
 fun MainContent(
     preferences: UserPreferences,
     sesami: NukiSesamiClient,
-    bluetoothAdapter: BluetoothAdapter?,
     viewSelected: ViewSelected,
     modifier: Modifier = Modifier
 ) {
     when(viewSelected) {
         ViewSelected.LogicalView -> LogicalView(sesami, modifier, preferences)
         ViewSelected.DetailedStatusView -> DetailedStatusView(sesami, modifier)
-        ViewSelected.SettingsView -> SettingsView(modifier, preferences, bluetoothAdapter)
+        ViewSelected.SettingsView -> SettingsView(sesami, modifier, preferences)
     }
 }
 
@@ -260,13 +254,10 @@ fun MainContent(
 @Composable
 fun MainScreenPreview() {
     val context = LocalContext.current
-    val manager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-
     NukiSesamiAppTheme {
         MainScreen(
             preferences = UserPreferences(),
-            sesami = NukiSesamiClient(),
-            bluetoothAdapter = manager.adapter,
+            sesami = NukiSesamiClient(context, null, null),
             modifier = Modifier
         )
     }

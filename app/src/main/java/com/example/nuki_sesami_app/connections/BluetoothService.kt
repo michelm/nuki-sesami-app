@@ -14,72 +14,92 @@ import com.example.nuki_sesami_app.jsonrpc.DoorRequestParams
 import com.example.nuki_sesami_app.jsonrpc.StatusMessage
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.IOException
 import java.io.InputStream
 import java.lang.reflect.Method
-import java.util.Timer
-import kotlin.concurrent.timer
 
 class BluetoothService(
     val context: Context,
-    val adapter: BluetoothAdapter,
+    val adapter: BluetoothAdapter?,
+    val coroutineScope: CoroutineScope?,
     private val nukiDeviceID: String,
     private var address: String = "",
     private var name: String = "",
     val channel: Int = 4,
 ): NukiSesamiConnection() {
     /** Send and receive RCFCOMM data on this socket */
-    private var socket: BluetoothSocket
-
-    /** background reader and connection check */
-    private var timer: Timer
+    private var socket = getBluetoothSocket()
 
     /** contains to be processed received data */
     private var received: String = ""
 
-    init {
+    /** routine for connecting the socket */
+    private var connector: Job? = coroutineScope?.launch {
+        withContext(Dispatchers.IO) {
+            try {
+                socket.connect()
+                connected.value = socket.isConnected
+                Log.d("bluetooth", "connected($name, $address, $channel)")
+            } catch(e: IOException) {
+                connected.value = false
+                error.value = e.toString()
+            } catch(e: SecurityException) {
+                connected.value = false
+                error.value = e.toString()
+            }
+        }
+    }
+
+    /** routine for checking the connection state and receiving data from the socket */
+    private var receiver: Job? = coroutineScope?.launch {
+        withContext(Dispatchers.IO) {
+            while (true) {
+                connected.value = socket.isConnected
+                Log.d("bluetooth", "receiver(connected=${connected.value})")
+
+                if (socket.isConnected) {
+                    try {
+                        receive(socket.inputStream)
+                    } catch (e: IOException) {
+                        connected.value = false
+                        error.value = e.toString()
+                    }
+                }
+
+                delay(1000)
+            }
+        }
+    }
+
+    private fun getBluetoothSocket(): BluetoothSocket {
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) !=
             PackageManager.PERMISSION_GRANTED) {
-            throw BluetoothServiceError("Got no Bluetooth connect permission")
+            throw BluetoothServiceError("got no connect permission")
         }
-        
+
+        if (adapter == null) {
+            throw BluetoothServiceError("got no bluetooth adapter")
+        }
+
         adapter.cancelDiscovery()
         val devices: Set<BluetoothDevice>? = adapter.bondedDevices
         val device: BluetoothDevice = devices?.firstOrNull { it.address == address || it.name == name }
-            ?: throw BluetoothServiceError("Bluetooth device(name=$name, address=$address) not found")
+            ?: throw BluetoothServiceError("device(name=$name, address=$address) not found")
 
         name = device.name
         address = device.address
 
         val m: Method = device.javaClass.getMethod("createRfcommSocket", Int::class.javaPrimitiveType)
-        socket = m.invoke(device, channel) as BluetoothSocket
-
-        try {
-            socket.connect()
-        } catch(e: IOException) {
-            throw BluetoothServiceError("Bluetooth socket.connect failed", e)
-        }
-
-        error.value = ""
-        Log.d("bluetooth", "connected($name, addr=$address, channel=$channel)")
-
-        this.timer = timer(
-            name = "NukiSesami.BluetoothService",
-            daemon = false,
-            initialDelay = 1000,
-            period = 1000,
-            action = {
-                connected.value = socket.isConnected
-                try {
-                    receive(socket.inputStream)
-                } catch(e: IOException) {
-                    connected.value = false
-                    error.value = e.toString()
-                }
-            }
-        )
+        return m.invoke(device, channel) as BluetoothSocket
     }
 
+    /** Store received data and process message when a newline is received */
     private fun receive(input: InputStream) {
         var remaining = input.available()
 
@@ -96,6 +116,7 @@ class BluetoothService(
         }
     }
 
+    /** Inform subscribers of a received status message */
     private fun processStatusMessage(msg: StatusMessage) {
         notify("sesami/${nukiDeviceID}/version", msg.params.version)
         notify("sesami/${nukiDeviceID}/state", msg.params.door.state)
@@ -107,6 +128,7 @@ class BluetoothService(
         notify("sesami/${nukiDeviceID}/relay/openclose", if(msg.params.relay.openclose) 1 else 0)
     }
 
+    /** Process a single message; at present only status messages are supported */
     private fun process(data: String): String {
         Log.d("bluetooth", "processing($data)")
         val s = data.replace("\n", "") // strip newlines
@@ -123,8 +145,8 @@ class BluetoothService(
     }
 
     override fun close() {
-        timer.cancel()
-        timer.purge()
+        connector?.cancel()
+        receiver?.cancel()
         socket.close()
         connected.value = false
         error.value = ""
@@ -133,18 +155,21 @@ class BluetoothService(
 
     /** Publishes a message on the channel */
     override fun publish(topic: String, value: String) {
-        if (topic != "sesami/${nukiDeviceID}/request/state") {
+        if (!connected.value) {
             return
         }
 
-        val request = DoorRequestMessage(params=DoorRequestParams(state=value.toInt()))
-        val msg = Gson().toJson(request) + "\n"
-
-        Log.d("bluetooth", "send($msg)")
+        if (topic != "sesami/${nukiDeviceID}/request/state") { // the only topic supported
+            return
+        }
 
         try {
-            socket.outputStream.write(msg.toByteArray())
-            Log.d("bluetooth", "published($topic, $value)")
+            socket.let { s ->
+                val request = DoorRequestMessage(params=DoorRequestParams(state=value.toInt()))
+                val msg = Gson().toJson(request) + "\n"
+                s.outputStream.write(msg.toByteArray())
+                Log.d("bluetooth", "published($topic, $value)")
+            }
         } catch (e: IOException) {
             Log.e("bluetooth", "publish($topic, $value) failed", e)
             connected.value = false
