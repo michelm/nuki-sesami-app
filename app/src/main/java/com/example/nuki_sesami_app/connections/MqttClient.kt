@@ -30,7 +30,6 @@ class MqttClient(
                 Log.w("mqtt", "connectionLost: ${cause.toString()}")
                 connected.value = false
                 error.value = "connectionLost: ${cause.toString()}"
-                // TODO: throw exception?
             }
 
             override fun messageArrived(topic: String?, message: MqttMessage?) {
@@ -71,7 +70,6 @@ class MqttClient(
                 Log.w("mqtt", "connect failed: $exception")
                 connected.value = false
                 error.value = "onFailure: $exception"
-                // TODO: throw exception?
             }
         })
     }

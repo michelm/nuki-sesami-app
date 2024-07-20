@@ -46,6 +46,6 @@ class DummyConnection(
     }
 
     override fun publish(topic: String, value: String) {
-        // TODO: implement me
+        // dummy implementation; no action
     }
 }
