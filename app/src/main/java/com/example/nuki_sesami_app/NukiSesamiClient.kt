@@ -18,7 +18,7 @@ import com.example.nuki_sesami_app.connections.DummyConnection
 import com.example.nuki_sesami_app.connections.MqttClient
 import com.example.nuki_sesami_app.connections.NukiSesamiConnection
 import com.example.nuki_sesami_app.errors.BluetoothServiceError
-import com.example.nuki_sesami_app.state.ConnectionType
+import com.example.nuki_sesami_app.connections.ConnectionType
 import com.example.nuki_sesami_app.state.DoorAction
 import com.example.nuki_sesami_app.state.DoorMode
 import com.example.nuki_sesami_app.state.DoorRequestState

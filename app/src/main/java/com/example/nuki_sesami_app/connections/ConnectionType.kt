@@ -1,9 +1,9 @@
-package com.example.nuki_sesami_app.state
+package com.example.nuki_sesami_app.connections
 
 enum class ConnectionType(val value: Int) {
     MQTT(0),
     Bluetooth(1),
-    Simulated(2);
+    Simulated(2); // dummy connection
 
     companion object {
         fun from(value: Int): ConnectionType {

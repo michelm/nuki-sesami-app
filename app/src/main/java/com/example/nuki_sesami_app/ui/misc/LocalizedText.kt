@@ -2,7 +2,7 @@ package com.example.nuki_sesami_app.ui.misc
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
-import com.example.nuki_sesami_app.state.ConnectionType
+import com.example.nuki_sesami_app.connections.ConnectionType
 import com.example.nuki_sesami_app.state.DoorAction
 import com.example.nuki_sesami_app.state.DoorMode
 import com.example.nuki_sesami_app.state.DoorSensorState
