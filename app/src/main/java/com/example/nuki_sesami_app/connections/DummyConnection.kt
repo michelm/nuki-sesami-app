@@ -1,51 +1,121 @@
 package com.example.nuki_sesami_app.connections
 
-import java.util.Timer
-import kotlin.concurrent.timer
-import kotlin.random.Random
+import com.example.nuki_sesami_app.state.DoorMode
+import com.example.nuki_sesami_app.state.DoorRequestState
+import com.example.nuki_sesami_app.state.DoorSensorState
+import com.example.nuki_sesami_app.state.DoorState
+import com.example.nuki_sesami_app.state.LockState
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class DummyConnection(
+    private val coroutineScope: CoroutineScope?,
     private val nukiDeviceID: String,
 ): NukiSesamiConnection() {
-    /** Simulation timer used to mimic to some dummy behavior */
-    private var _timer: Timer? = null
+    private var state = DoorState.Unknown
+    private var worker: Job? = null
 
     init {
-        _timer = timer(
-            name = "DummyConnectionTimer",
-            daemon = false,
-            initialDelay = 0,
-            period = 1000,
-            action = {
-                var n = Random.nextInt(0, 10)
-                notify("sesami/${nukiDeviceID}/version", "$n.$n.$n")
+        notify("sesami/${nukiDeviceID}/version", "0.0.0")
+        notify("sesami/${nukiDeviceID}/state", state.value)
+        notify("sesami/${nukiDeviceID}/mode", DoorMode.Unknown.value)
+        notify("nuki/${nukiDeviceID}/state", LockState.Undefined.value)
+        notify("nuki/${nukiDeviceID}/doorsensorState", DoorSensorState.Unknown.value)
+        connected.value = false
+        error.value = "Oooeps I did it again!"
 
-                n = Random.nextInt(1,3)
-                notify("sesami/${nukiDeviceID}/state", n.toString())
-
-                n = Random.nextInt(0,2)
-                notify("sesami/${nukiDeviceID}/mode", n.toString())
-
-                n = Random.nextInt(1, 8)
-                notify("nuki/${nukiDeviceID}/state", n.toString())
-
-                n = Random.nextInt(1, 6)
-                notify("nuki/${nukiDeviceID}/doorsensorState", n.toString())
-
-                val c = Random.nextBoolean()
-                connected.value = c
-                error.value = if (c) "Ok" else "Oeps I did it again!"
-            }
-        )
+        worker = coroutineScope?.launch {
+            delay(3000)
+            connected.value = true
+            error.value = ""
+            state = DoorState.Closed
+            notify("sesami/${nukiDeviceID}/version", "9.9.9")
+            notify("sesami/${nukiDeviceID}/state", state.value)
+            notify("sesami/${nukiDeviceID}/mode", DoorMode.OpenClose.value)
+            notify("nuki/${nukiDeviceID}/state", LockState.Unlocked.value)
+            notify("nuki/${nukiDeviceID}/doorsensorState", DoorSensorState.DoorClosed.value)
+        }
     }
 
     override fun close() {
-        _timer?.cancel()
-        _timer?.purge()
-        _timer = null
+        worker?.cancel()
     }
 
     override fun publish(topic: String, value: String) {
-        // dummy implementation; no action
+        if (!connected.value || topic != "sesami/${nukiDeviceID}/request/state") {
+            return
+        }
+
+        val request: DoorRequestState = DoorRequestState.from(value)
+
+        when(state) {
+            DoorState.Closed -> {
+                when (request) {
+                    DoorRequestState.Open -> {
+                        worker = createOpenDoorWorker()
+                    }
+                    DoorRequestState.OpenHold -> {
+                        worker = createOpenHoldDoorWorker()
+                    }
+                    else -> { /* ignore the request */ }
+                }
+            }
+            DoorState.OpenHold -> {
+                when(request) {
+                    DoorRequestState.Close -> {
+                        worker = createCloseDoorWorker()
+                    }
+                    else -> { /* ignore the request */ }
+               }
+           }
+           else -> { /* ignore the request */ }
+       }
+   }
+
+    private fun createCloseDoorWorker(): Job? {
+        return coroutineScope?.launch {
+            notify("sesami/${nukiDeviceID}/mode", DoorMode.OpenClose.value)
+            delay(500) // delay before closing
+            state = DoorState.Closed
+            notify("sesami/${nukiDeviceID}/state", state.value)
+            delay(3000) // door closes
+            notify("nuki/${nukiDeviceID}/doorsensorState", DoorSensorState.DoorClosed.value)
+        }
+    }
+
+    private fun createOpenDoorWorker(): Job? {
+        return coroutineScope?.launch {
+            state = DoorState.Opened
+            notify("sesami/${nukiDeviceID}/state", state.value)
+            notify("nuki/${nukiDeviceID}/state", LockState.Unlatching.value)
+            delay(3000)
+            notify("nuki/${nukiDeviceID}/state", LockState.Unlatched.value)
+            delay(500) // delay between door opening and sensor detecting it
+            notify("nuki/${nukiDeviceID}/doorsensorState", DoorSensorState.DoorOpened.value)
+            delay(3000)
+            notify("nuki/${nukiDeviceID}/state", LockState.Unlocked.value)
+            delay(12000)
+            notify("nuki/${nukiDeviceID}/doorsensorState", DoorSensorState.DoorClosed.value)
+            state = DoorState.Closed
+            notify("sesami/${nukiDeviceID}/state", state.value)
+        }
+    }
+
+    private fun createOpenHoldDoorWorker(): Job? {
+        return coroutineScope?.launch {
+            state = DoorState.OpenHold
+            notify("sesami/${nukiDeviceID}/state", state.value)
+            notify("sesami/${nukiDeviceID}/mode", DoorMode.OpenHold.value)
+            notify("nuki/${nukiDeviceID}/state", LockState.Unlatching.value)
+            delay(3000)
+            notify("nuki/${nukiDeviceID}/state", LockState.Unlatched.value)
+            delay(500) // door opens
+            notify("nuki/${nukiDeviceID}/doorsensorState", DoorSensorState.DoorOpened.value)
+            delay(3000)
+            notify("nuki/${nukiDeviceID}/state", LockState.Unlocked.value)
+            // door is now in open-hold mode
+        }
     }
 }

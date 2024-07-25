@@ -149,7 +149,7 @@ open class NukiSesamiClient (
         connection = when(connectionType.value) {
             ConnectionType.MQTT -> getMqttClient()
             ConnectionType.Bluetooth -> getBluetoothService()
-            ConnectionType.Simulated -> DummyConnection(nukiDeviceID)
+            ConnectionType.Simulated -> DummyConnection(coroutineScope, nukiDeviceID)
         }
 
         connection?.let { connectorSubscribe(it, context) }
