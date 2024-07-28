@@ -14,3 +14,6 @@ const val NUKI_SESAMI_MAX_MQTT_PORT = 65535
 
 const val NUKI_SESAMI_MIN_BLUETOOTH_CHANNEL = 1
 const val NUKI_SESAMI_MAX_BLUETOOTH_CHANNEL = 9
+
+// Simulation/demo mode is not enabled in production code
+const val NUKI_SESAMI_DEMO_ENABLED = false

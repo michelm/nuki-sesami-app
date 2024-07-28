@@ -45,6 +45,7 @@ import com.example.nuki_sesami_app.ui.misc.doorSensorText
 import com.example.nuki_sesami_app.ui.misc.doorStateText
 import com.example.nuki_sesami_app.ui.misc.lockStateText
 import com.example.nuki_sesami_app.ui.misc.connectionTypeText
+import com.example.nuki_sesami_app.base.NUKI_SESAMI_DEMO_ENABLED
 
 @Composable
 fun DetailedStatusViewEntry(
@@ -127,10 +128,13 @@ fun DetailedStatusView(
             stringResource(R.string.detailed_status_view_lock_state), lockStateText(lock)
         )
 
-        DetailedStatusViewEntry(Icons.Filled.Star,
-            stringResource(R.string.detailed_status_view_simulated), simulated.toString(),
-            tint = if (simulated) MaterialTheme.colorScheme.primary else null
-        )
+        if (NUKI_SESAMI_DEMO_ENABLED) {
+            DetailedStatusViewEntry(
+                Icons.Filled.Star,
+                stringResource(R.string.detailed_status_view_simulated), simulated.toString(),
+                tint = if (simulated) MaterialTheme.colorScheme.primary else null
+            )
+        }
 
         DetailedStatusViewEntry(Icons.Filled.Info,
             stringResource(R.string.detailed_status_view_server_version), serverVersion)

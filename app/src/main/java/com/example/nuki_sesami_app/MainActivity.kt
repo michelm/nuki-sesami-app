@@ -10,6 +10,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import com.example.nuki_sesami_app.base.UserPreferences
+import com.example.nuki_sesami_app.base.NUKI_SESAMI_DEMO_ENABLED
 import com.example.nuki_sesami_app.ui.theme.NukiSesamiAppTheme
 import com.example.nuki_sesami_app.ui.views.MainScreen
 
@@ -26,6 +27,10 @@ class MainActivity : ComponentActivity() {
             val coroutineScope = rememberCoroutineScope()
 
             preferences = UserPreferences(context)
+
+            if (!NUKI_SESAMI_DEMO_ENABLED) {
+                preferences.save(R.string.preferences_key_simulation_mode, false)
+            }
 
             sesami = NukiSesamiClient(context, manager.adapter, coroutineScope)
             // REMARK uncomment to force simulation, bluetooth or mqtt mode:

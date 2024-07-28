@@ -43,6 +43,7 @@ import com.example.nuki_sesami_app.base.NUKI_SESAMI_MAX_MQTT_PORT
 import com.example.nuki_sesami_app.base.NUKI_SESAMI_MIN_BLUETOOTH_CHANNEL
 import com.example.nuki_sesami_app.base.NUKI_SESAMI_MIN_MQTT_PORT
 import com.example.nuki_sesami_app.R
+import com.example.nuki_sesami_app.base.NUKI_SESAMI_DEMO_ENABLED
 import com.example.nuki_sesami_app.base.UserPreferences
 
 fun isValidNukiDeviceIDArg(arg: String): Boolean {
@@ -315,9 +316,11 @@ fun SettingsView(
         ) {
             Column(horizontalAlignment = Alignment.Start
             ) {
-                SettingsViewSelectSimulation(
-                    preferences
-                )
+                if (NUKI_SESAMI_DEMO_ENABLED) {
+                    SettingsViewSelectSimulation(
+                        preferences
+                    )
+                }
 
                 SettingsViewSelectConnectionType(
                     preferences,
