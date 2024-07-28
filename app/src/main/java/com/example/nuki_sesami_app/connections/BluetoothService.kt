@@ -36,6 +36,9 @@ class BluetoothService(
     /** Send and receive RCFCOMM data on this socket */
     private var socket = getBluetoothSocket()
 
+    /** will be set to true when connection has been closed */
+    private var closed = false
+
     /** contains to be processed received data */
     private var received: String = ""
 
@@ -47,9 +50,11 @@ class BluetoothService(
                 socket.connect()
                 Log.d("bluetooth", "connected($name, $address, $channel)")
             } catch(e: IOException) {
-                connected.value = false
-                error.value = e.toString()
-                Log.e("bluetooth", "connect($name, $address, $channel) failed", e)
+                if (!closed) {
+                    connected.value = false
+                    error.value = e.toString()
+                    Log.e("bluetooth", "connect($name, $address, $channel) failed", e)
+                }
             } catch(e: SecurityException) {
                 connected.value = false
                 error.value = e.toString()
@@ -77,7 +82,7 @@ class BluetoothService(
                     connectAttempts += 1
 
                     if (connectAttempts == MAX_CONNECT_ATTEMPTS) {
-                        error.value = "Connect timeout"
+                        error.value = "Connect timeout ${MAX_CONNECT_ATTEMPTS}[s]"
                         Log.d("bluetooth", "receiver connect timeout ${MAX_CONNECT_ATTEMPTS}[s]")
                     }
                 }
@@ -157,6 +162,7 @@ class BluetoothService(
     }
 
     override fun close() {
+        closed = true
         connector?.cancel()
         receiver?.cancel()
         socket.close()
