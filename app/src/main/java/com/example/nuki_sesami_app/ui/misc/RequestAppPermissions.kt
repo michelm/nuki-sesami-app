@@ -9,16 +9,24 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 
-val REQUIRED_APP_PERMISSIONS = arrayOf(
-    android.Manifest.permission.INTERNET,
-    android.Manifest.permission.ACCESS_NETWORK_STATE,
-    android.Manifest.permission.BLUETOOTH,
-    android.Manifest.permission.BLUETOOTH_ADMIN,
-    android.Manifest.permission.BLUETOOTH_CONNECT,
-    android.Manifest.permission.BLUETOOTH_SCAN,
-)
+fun requiredAppPermissions(): Array<String> {
+    return if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+        arrayOf(
+            android.Manifest.permission.INTERNET,
+            android.Manifest.permission.ACCESS_NETWORK_STATE,
+            android.Manifest.permission.BLUETOOTH_SCAN,
+            android.Manifest.permission.BLUETOOTH_CONNECT,
+        )
+    } else {
+        arrayOf(
+            android.Manifest.permission.INTERNET,
+            android.Manifest.permission.ACCESS_NETWORK_STATE,
+            android.Manifest.permission.BLUETOOTH,
+        )
+    }
+}
 
-fun hasAppPermissions(context: Context, permissions: Array<String> = REQUIRED_APP_PERMISSIONS): Boolean {
+fun hasAppPermissions(context: Context, permissions: Array<String>): Boolean {
     return permissions.all {
         ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
     }
@@ -27,6 +35,7 @@ fun hasAppPermissions(context: Context, permissions: Array<String> = REQUIRED_AP
 @Composable
 fun RequestAppPermissions(onPermissionsResult: (Boolean) -> Unit) {
     val context = LocalContext.current
+    val requiredPermissions = requiredAppPermissions()
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -36,8 +45,8 @@ fun RequestAppPermissions(onPermissionsResult: (Boolean) -> Unit) {
     }
 
     LaunchedEffect(Unit) {
-        if (!hasAppPermissions(context)) {
-            permissionLauncher.launch(REQUIRED_APP_PERMISSIONS)
+        if (!hasAppPermissions(context, requiredPermissions)) {
+            permissionLauncher.launch(requiredPermissions)
         } else {
             onPermissionsResult(true)
         }
