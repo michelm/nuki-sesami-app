@@ -145,7 +145,7 @@ open class NukiSesamiClient (
             return
         }
 
-        connection?.close()
+        deactivate()
         connection = when(connectionType.value) {
             ConnectionType.MQTT -> getMqttClient()
             ConnectionType.Bluetooth -> getBluetoothService()
@@ -157,13 +157,8 @@ open class NukiSesamiClient (
     }
 
     open fun deactivate() {
-        if (!activated.value) {
-            return
-        }
-
         connection?.close()
         connection = null
-
         doorState.value = DoorState.Unknown
         doorMode.value = DoorMode.Unknown
         doorAction.value = DoorAction.None
