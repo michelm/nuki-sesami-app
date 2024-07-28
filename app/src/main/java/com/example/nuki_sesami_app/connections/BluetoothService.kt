@@ -43,15 +43,17 @@ class BluetoothService(
     private var connector: Job? = coroutineScope?.launch {
         withContext(Dispatchers.IO) {
             try {
+                Log.d("bluetooth", "connect($name, $address, $channel)")
                 socket.connect()
-                connected.value = socket.isConnected
                 Log.d("bluetooth", "connected($name, $address, $channel)")
             } catch(e: IOException) {
                 connected.value = false
                 error.value = e.toString()
+                Log.e("bluetooth", "connect($name, $address, $channel) failed", e)
             } catch(e: SecurityException) {
                 connected.value = false
                 error.value = e.toString()
+                Log.e("bluetooth", "connect($name, $address, $channel) failed", e)
             }
         }
     }
