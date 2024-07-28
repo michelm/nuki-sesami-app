@@ -11,10 +11,10 @@ import org.eclipse.paho.client.mqttv3.MqttMessage
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence
 
 class MqttClient(
-    hostname: String,
-    port: Int,
-    private var username: String,
-    private var passwd: String,
+    private val hostname: String,
+    private val port: Int,
+    private val username: String,
+    private val passwd: String,
     private val nukiDeviceID: String,
 ): NukiSesamiConnection() {
     /** Contains the actual PAHO client handle */
@@ -56,7 +56,7 @@ class MqttClient(
 
         client.connect(options, object : IMqttActionListener {
             override fun onSuccess(asyncActionToken: IMqttToken) {
-                Log.i("mqtt", "connected(this=$this)")
+                Log.i("mqtt", "connected($username@$hostname:$port)")
                 connected.value = true
                 error.value = ""
                 client.subscribe("nuki/${nukiDeviceID}/state", 0)
@@ -75,7 +75,7 @@ class MqttClient(
     }
 
     override fun close() {
-        Log.d("mqtt", "close(this=$this)")
+        Log.d("mqtt", "close($username@$hostname:$port)")
         if (client.isConnected) {
             client.disconnect()
         }
