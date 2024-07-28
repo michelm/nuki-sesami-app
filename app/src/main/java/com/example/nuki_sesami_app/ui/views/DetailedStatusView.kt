@@ -4,7 +4,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Home
@@ -159,17 +162,22 @@ fun DetailedStatusView(
             modifier = Modifier.padding(5.dp)
         )
 
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            TextField(
-                modifier = Modifier.padding(start = 5.dp),
-                value = connectionError.ifEmpty { "<none>" },
-                onValueChange = {},
-                label = { Text(stringResource(R.string.detailed_status_view_connection_error)) },
-                singleLine = false,
-                maxLines = 10
-            )
+        if (connectionError.isNotEmpty()) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TextField(
+                    modifier = Modifier
+                        .padding(start = 5.dp, end= 5.dp)
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
+                    value = connectionError.ifEmpty { "<none>" },
+                    readOnly = true,
+                    onValueChange = {},
+                    label = { Text(stringResource(R.string.detailed_status_view_connection_error)) },
+                    singleLine = false,
+                )
+            }
         }
     }
 }
