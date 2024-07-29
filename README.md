@@ -6,7 +6,7 @@ Android application to Open (Hold) and Close an Electric Door controlled by the 
 
 Using this app you can open (and hold open) an electric door equipped with an _Nuki 3.0 Pro_ smart lock. The _Nuki Sesami_ service will perform the logic for you when using an _ERREKA Smart Evolution Pro_ electric door controller in combination with an _Nuki 3.0 Pro_ smart lock.
 
-![nuki-sesami-wiring](https://raw.githubusercontent.com/michelm/nuki-sesami/master/nuki-sesami-overview.png)
+![nuki-sesami-wiring](https://raw.githubusercontent.com/michelm/nuki-sesami-app/master/nuki-sesami-overview.png)
 
 When connected to the same _WiFi_ network commands to, and status from, the _Nuki Sesami_ service can be exchanged using the _mqtt_ protocol. Otherwise when paired the same can be achieved using Bluetooth.
 
@@ -36,7 +36,7 @@ Installation procedure:
 
 The app has now been installed and is ready for setup and is showing the main view which should be looking like the image below.
 
-![nuki-sesami-app-main-view-not-connected](https://raw.githubusercontent.com/michelm/nuki-sesami/master/nuki-sesami-app-main-view-not-connected.png)
+![nuki-sesami-app-main-view-not-connected](https://raw.githubusercontent.com/michelm/nuki-sesami-app/master/nuki-sesami-app-main-view-not-connected.png)
 
 Setup procedure:
 
@@ -55,18 +55,18 @@ Setup procedure:
       - _Bluetooth Channel_: the channel number of the _Nuki Sesami_ service,
 4. When done select the _Home_ icon in the top left corner to return to the main view; the app is now ready for use.
 
-![nuki-sesami-app-settings-view](https://raw.githubusercontent.com/michelm/nuki-sesami/master/nuki-sesami-app-settings-view.png)
+![nuki-sesami-app-settings-view](https://raw.githubusercontent.com/michelm/nuki-sesami-app/master/nuki-sesami-app-settings-view.png)
 
 ## Usage
 
 The main view of the app can be used to open, hold open and close the electric door using a single button. When open-hold is desired select hold before pressing the _open_ button.
 While the door open(ing) in normal operation the button will be disabled. When the door is closed the button will be enabled again.
 
-![nuki-sesami-app-main-view](https://raw.githubusercontent.com/michelm/nuki-sesami/master/nuki-sesami-app-main-view.png)
+![nuki-sesami-app-main-view](https://raw.githubusercontent.com/michelm/nuki-sesami-app/master/nuki-sesami-app-main-view.png)
 
 The door, lock and connection status can be viewed in the bottom section of the main view. In case of an connection error or problem the status will be displayed using a red warning sign otherwise it will be displated using a grayed check mark. Also all other states will have an _Undefined_ / _Unknown_ value and the _Open_/_Close_ button, as well the _Hold_ selection will be disabled.
 
-![nuki-sesami-app-status-view](https://raw.githubusercontent.com/michelm/nuki-sesami/master/nuki-sesami-app-status-view.png)
+![nuki-sesami-app-status-view](https://raw.githubusercontent.com/michelm/nuki-sesami-app/master/nuki-sesami-app-status-view.png)
 
 The status view can be used to obtain more information on the current state of the door, lock
 server version and connection status. Also in case of connection problems additional error information will be displayed in the bottom section of this view.
