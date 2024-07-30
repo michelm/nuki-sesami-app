@@ -151,14 +151,16 @@ fun MainScreen(
                             onClick = { appBarTitleRID = changeView(ViewSelected.LogicalView,
                                 R.string.app_bar_title_home)
                             },
-                            imageVector = Icons.Filled.Home
+                            imageVector = if (viewSelected == ViewSelected.LogicalView)
+                                Icons.Filled.Home else Icons.Outlined.Home
                         )
 
                         TopAppBarActionIconButton(
                             onClick = { appBarTitleRID = changeView(ViewSelected.DetailedStatusView,
                                 R.string.app_bar_title_detailed_status)
                             },
-                            imageVector = Icons.Filled.DateRange
+                            imageVector = if (viewSelected == ViewSelected.DetailedStatusView)
+                                Icons.Filled.DateRange else Icons.Outlined.DateRange
                         )
 
                         TopAppBarActionIconButton(
@@ -174,7 +176,8 @@ fun MainScreen(
                             onClick = { appBarTitleRID = changeView(ViewSelected.SettingsView,
                                 R.string.app_bar_title_settings)
                             },
-                            imageVector = Icons.Filled.Settings
+                            imageVector = if (viewSelected == ViewSelected.SettingsView)
+                                Icons.Filled.Settings else Icons.Outlined.Settings
                         )
                     }
                 )
