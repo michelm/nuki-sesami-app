@@ -9,8 +9,8 @@ lifecycleRuntimeKtx = "2.8.3"
 activityCompose = "1.9.0"
 composeBom = "2024.06.00"
 pahoMqtt = "1.0.2"
-zxing = "3.4.1"
-gson = "2.10.1"
+zxing = "3.5.3"
+gson = "2.11.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
