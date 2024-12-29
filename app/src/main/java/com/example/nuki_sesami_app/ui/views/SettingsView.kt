@@ -8,6 +8,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+// TODO: FIXME: get these icons working
+//implementation(libs.androidx.compose.material.icons.extended)
+//androidx-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended"}
+//import androidx.compose.material.icons.filled.Visibility
+//import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
@@ -29,6 +39,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.nuki_sesami_app.NukiSesamiClient
 import com.example.nuki_sesami_app.base.NUKI_SESAMI_DEFAULT_BLUETOOTH_DEVICE
@@ -171,25 +182,26 @@ fun SettingsViewNukiDeviceID(
 fun SettingsViewMqtt(
     preferences: UserPreferences,
 ) {
-    var mqttHostname by remember { mutableStateOf(preferences.load(
+    var host by remember { mutableStateOf(preferences.load(
         R.string.preferences_key_mqtt_hostname, NUKI_SESAMI_DEFAULT_MQTT_HOSTNAME
     ) ) }
-    var mqttPort by remember { mutableStateOf(preferences.load(
+    var port by remember { mutableStateOf(preferences.load(
         R.string.preferences_key_mqtt_port, NUKI_SESAMI_DEFAULT_MQTT_PORT
     ).toString() ) }
-    var mqttUsername by remember { mutableStateOf(preferences.load(
+    var user by remember { mutableStateOf(preferences.load(
         R.string.preferences_key_mqtt_username, NUKI_SESAMI_DEFAULT_MQTT_USERNAME
     ) ) }
-    var mqttPassword by remember { mutableStateOf(preferences.load(
+    var password by remember { mutableStateOf(preferences.load(
         R.string.preferences_key_mqtt_password, NUKI_SESAMI_DEFAULT_MQTT_PASSWORD
     ) ) }
-    var validMqttPort by remember { mutableStateOf (true) }
+    var validPort by remember { mutableStateOf (true) }
+    var passwordVisible by remember { mutableStateOf(false) }
 
     TextField(
-        value = mqttHostname,
+        value = host,
         onValueChange = {
-            mqttHostname = it
-            preferences.save(R.string.preferences_key_mqtt_hostname, mqttHostname)
+            host = it
+            preferences.save(R.string.preferences_key_mqtt_hostname, host)
         },
         label = { Text(stringResource(R.string.settings_label_mqtt_hostname)) },
         singleLine = true,
@@ -197,26 +209,26 @@ fun SettingsViewMqtt(
     )
 
     TextField(
-        value = mqttPort,
+        value = port,
         onValueChange = {
-            val port = parseMqttPortArg(it.toIntOrNull())
-            if (port != null) {
-                preferences.save(R.string.preferences_key_mqtt_port, port)
+            val num = parseMqttPortArg(it.toIntOrNull())
+            if (num != null) {
+                preferences.save(R.string.preferences_key_mqtt_port, num)
             }
-            mqttPort = it
-            validMqttPort = (port != null)
+            port = it
+            validPort = (num != null)
         },
         label = { Text(stringResource(R.string.settings_label_mqtt_port)) },
         singleLine = true,
-        isError = !validMqttPort,
+        isError = !validPort,
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
     )
 
     TextField(
-        value = mqttUsername,
+        value = user,
         onValueChange = {
-            mqttUsername = it
-            preferences.save(R.string.preferences_key_mqtt_username, mqttUsername)
+            user = it
+            preferences.save(R.string.preferences_key_mqtt_username, user)
         },
         label = { Text(stringResource(R.string.settings_label_mqtt_username)) },
         singleLine = true,
@@ -224,15 +236,28 @@ fun SettingsViewMqtt(
     )
 
     TextField(
-        value = mqttPassword,
+        value = password,
         onValueChange = {
-            mqttPassword = it
-            preferences.save(R.string.preferences_key_mqtt_password, mqttPassword)
+            password = it
+            preferences.save(R.string.preferences_key_mqtt_password, password)
         },
         label = { Text(stringResource(R.string.settings_label_mqtt_password)) },
         singleLine = true,
-        visualTransformation = PasswordVisualTransformation(),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+        trailingIcon = {
+            val image = if (passwordVisible)
+                Icons.Filled.AccountCircle
+            else Icons.Filled.Person
+
+            // Localized description for accessibility services
+            val description = if (passwordVisible) "Hide password" else "Show password"
+
+            // Toggle button to hide or display password
+            IconButton(onClick = {passwordVisible = !passwordVisible}){
+                Icon(imageVector  = image, description)
+            }
+        }
     )
 }
 
