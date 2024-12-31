@@ -1,14 +1,14 @@
 [versions]
 agp = "8.7.3"
-kotlin = "1.9.0"
-coreKtx = "1.13.1"
+kotlin = "1.9.24"
+coreKtx = "1.15.0"
 junit = "4.13.2"
 junitVersion = "1.2.1"
 espressoCore = "3.6.1"
-lifecycleRuntimeKtx = "2.8.3"
-activityCompose = "1.9.0"
-composeBom = "2024.06.00"
-pahoMqtt = "1.0.2"
+lifecycleRuntimeKtx = "2.8.7"
+activityCompose = "1.9.3"
+composeBom = "2024.12.01"
+pahoMqtt = "1.2.5"
 zxing = "3.5.3"
 gson = "2.11.0"
 
@@ -27,12 +27,11 @@ androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-toolin
 androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
-org-eclipse-paho-client-mqtt = { group = "org.eclipse.paho", name = "org.eclipse.paho.client.mqttv3", version.ref = "pahoMqtt" }
-org-eclipse-paho-android-service = { group = "org.eclipse.paho", name = "org.eclipse.paho.android.service", version.ref = "pahoMqtt" }
+org-eclipse-paho-client-mqtt = { group = "org.eclipse.paho", name = "org.eclipse.paho.mqttv5.client", version.ref = "pahoMqtt" }
 zxing-core = { module = "com.google.zxing:core", version.ref = "zxing" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
-jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 

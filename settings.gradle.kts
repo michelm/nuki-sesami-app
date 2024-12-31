@@ -16,7 +16,7 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        maven("https://repo.eclipse.org/content/repositories/paho-snapshots/")
+        maven("https://repo.eclipse.org/content/repositories/paho-releases/")
     }
 }
 

@@ -1,37 +1,47 @@
 package com.example.nuki_sesami_app.connections
 
 import android.util.Log
-import org.eclipse.paho.client.mqttv3.IMqttActionListener
-import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken
-import org.eclipse.paho.client.mqttv3.IMqttToken
-import org.eclipse.paho.client.mqttv3.MqttAsyncClient
-import org.eclipse.paho.client.mqttv3.MqttCallback
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions
-import org.eclipse.paho.client.mqttv3.MqttMessage
-import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence
+import org.eclipse.paho.mqttv5.client.IMqttToken
+import org.eclipse.paho.mqttv5.client.MqttActionListener
+import org.eclipse.paho.mqttv5.client.MqttAsyncClient
+import org.eclipse.paho.mqttv5.client.MqttCallback
+import org.eclipse.paho.mqttv5.client.MqttConnectionOptions
+import org.eclipse.paho.mqttv5.client.MqttDisconnectResponse
+import org.eclipse.paho.mqttv5.client.persist.MemoryPersistence
+import org.eclipse.paho.mqttv5.common.MqttException
+import org.eclipse.paho.mqttv5.common.MqttMessage
+import org.eclipse.paho.mqttv5.common.packet.MqttProperties
+
 
 class MqttClient(
     private val hostname: String,
     private val port: Int,
     private val username: String,
-    private val passwd: String,
+    passwd: String,
     private val nukiDeviceID: String,
 ): NukiSesamiConnection() {
+    private val clientID = "nuki-sesami-app"
+
     /** Contains the actual PAHO client handle */
     private var client: MqttAsyncClient = MqttAsyncClient(
         "tcp://$hostname:$port",
-        MqttAsyncClient.generateClientId(),
+        clientID,
         MemoryPersistence()
     )
 
     init {
-        client.setCallback(object : MqttCallback{
-            override fun connectionLost(cause: Throwable?) {
-                Log.w("mqtt", "connectionLost: ${cause.toString()}")
+        client.setCallback(object: MqttCallback {
+            override fun disconnected(disconnectResponse: MqttDisconnectResponse?) {
+                Log.w("mqtt", "disconnected: ${disconnectResponse.toString()}")
                 connected.value = false
-                error.value = "connectionLost: ${cause.toString()}"
+                error.value = "disconnected: ${disconnectResponse.toString()}"
             }
 
+            override fun mqttErrorOccurred(exception: MqttException?) {
+                Log.w("mqtt", "mqttErrorOccurred: ${exception.toString()}")
+            }
+
+            @Throws(Exception::class)
             override fun messageArrived(topic: String?, message: MqttMessage?) {
                 if (topic != null && message != null) {
                     val msg = message.payload.decodeToString()
@@ -40,23 +50,12 @@ class MqttClient(
                 }
             }
 
-            override fun deliveryComplete(token: IMqttDeliveryToken?) {
-                // no action
+            override fun deliveryComplete(token: IMqttToken?) {
+                Log.d("mqtt", "deliveryComplete: ${token.toString()}")
             }
-        })
 
-        val options = MqttConnectOptions().apply {
-            isCleanSession = false
-            keepAliveInterval = 60
-            if (username.isNotEmpty() && passwd.isNotEmpty()) {
-                password = passwd.toCharArray()
-                userName = username
-            }
-        }
-
-        client.connect(options, object : IMqttActionListener {
-            override fun onSuccess(asyncActionToken: IMqttToken) {
-                Log.i("mqtt", "connected($username@$hostname:$port)")
+            override fun connectComplete(reconnect: Boolean, serverURI: String?) {
+                Log.i("mqtt", "connectComplete(reconnect=$reconnect, serverURI=$serverURI)")
                 connected.value = true
                 error.value = ""
                 client.subscribe("nuki/${nukiDeviceID}/state", 0)
@@ -66,12 +65,42 @@ class MqttClient(
                 client.subscribe("sesami/${nukiDeviceID}/version", 0)
             }
 
-            override fun onFailure(asyncActionToken: IMqttToken, exception: Throwable) {
-                Log.w("mqtt", "connect failed: $exception")
-                connected.value = false
-                error.value = "onFailure: $exception"
+            override fun authPacketArrived(reasonCode: Int, properties: MqttProperties?) {
+                Log.i("mqtt", "authPacketArrived(reasonCode=$reasonCode, properties=$properties)")
             }
         })
+
+        // ConnectOption is used to specify username and password
+        val options = MqttConnectionOptions()
+        options.keepAliveInterval = 60
+        options.userName = username
+        options.password = passwd.toByteArray()
+
+        Log.i("mqtt", "connect(${client.clientId}, ${client.serverURI}), $options")
+
+        try {
+            client.connect(options, null, object : MqttActionListener {
+                override fun onSuccess(asyncActionToken: IMqttToken) {
+                    Log.i("mqtt", "connected($username@$hostname:$port)")
+                    connected.value = true
+                    error.value = ""
+                    client.subscribe("nuki/${nukiDeviceID}/state", 0)
+                    client.subscribe("nuki/${nukiDeviceID}/doorsensorState", 0)
+                    client.subscribe("sesami/${nukiDeviceID}/state", 0)
+                    client.subscribe("sesami/${nukiDeviceID}/mode", 0)
+                    client.subscribe("sesami/${nukiDeviceID}/version", 0)
+                }
+
+                override fun onFailure(asyncActionToken: IMqttToken, exception: Throwable) {
+                    Log.w("mqtt", "connect failed: $exception")
+                    connected.value = false
+                    error.value = "onFailure: $exception"
+                }
+            })
+        } catch (e: MqttException) {
+            // Get stack trace
+            e.printStackTrace()
+        }
     }
 
     override fun close() {
